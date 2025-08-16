@@ -1,0 +1,214 @@
+/* General Settings */
+body {
+    font-family: 'League Gothic', sans-serif;
+    background-color: #000;
+    color: #fff;
+    text-align: center;
+    margin: 0;
+    padding-bottom: 60px; /* Add padding for footer space */
+}
+
+/* Fixed Header */
+.app-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #000;
+    padding: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+}
+
+.logo {
+    width: 50px;
+    height: 50px;
+    margin-right: 10px;
+}
+
+.app-title {
+    font-family: 'League Gothic', sans-serif;
+    font-size: 36px;
+    margin: 0;
+    font-weight: normal; /* Ensure font-weight is never bold */
+    color: #fff;
+}
+
+/* Scoring Screen */
+.scoring-screen {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin-top: 100px; /* Prevent header from overlapping */
+}
+
+.team-name {
+    font-size: 48px;
+    margin-bottom: .0px;
+    margin-block-start: 0px;
+    font-weight: normal;
+    color: var(--team-color); /* Dynamic team color */
+}
+
+.score {
+    font-size: 72px;
+    margin-bottom: 0px;
+    font-weight: normal;
+}
+
+.score-edit input {
+    font-size: 24px;
+    font-family: 'League Gothic', sans-serif;
+}
+
+/* Score Buttons */
+.score-buttons {
+    /* display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center; */
+    /* margin: auto;
+    /* margin-left: 20px; */ 
+    width: 100%; 
+}
+
+.score-buttons .score-btn {
+    font-family: 'League Gothic', sans-serif;
+    font-size: 3em;
+    padding: 10px;
+    margin: auto;
+    margin-bottom: 10px;
+    border: none;
+    width: 90%; /* Full width for the button */
+    cursor: pointer;
+}
+
+.vs {
+    font-size: 2em;
+}
+
+#btnMinus1 {
+    background-color: #000; /* Black background */
+    color: var(--team-color); /* Team color for text */
+    border: solid 2px var(--team-color); /* Solid 2px border with team color */
+}
+
+/* Transparency for other buttons */
+#btnPlus4 {
+    background-color: var(--team-color);
+}
+
+#btnPlus3 {
+    background-color: var(--team-color);
+}
+
+#btnPlus2 {
+    background-color: var(--team-color);
+}
+
+#btnPlus1 {
+    background-color: var(--team-color);
+}
+
+/* Footer with Icons */
+.app-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: space-around;
+    background-color: #333;
+    padding: 10px;
+}
+
+.footer-btn {
+    font-size: 24px;
+    background: none;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    opacity: 0.7;
+}
+
+.footer-btn.active {
+    opacity: 1; /* Fully visible when active */
+}
+
+.footer-btn i {
+    font-size: 24px; /* Ensure icons are large enough to be visible */
+    color: #fff; /* Set the icon color to white */
+}
+
+/* History Section */
+.history-section {
+    margin: 20px auto; /* Centered with margins on left and right */
+    width: 90%; /* Not full width */
+    font-family: 'Roboto', sans-serif;
+    background-color: #fff;
+    color: #333;
+    border-radius: 8px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.history-section h2 {
+    font-size: 24px;
+    margin-bottom: 10px;
+}
+
+.history-section table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.history-section th, .history-section td {
+    padding: 10px;
+    text-align: center; /* Center text in the table */
+}
+
+.history-section th {
+    background-color: #f4f4f4;
+}
+
+.history-section tr:nth-child(even) {
+    background-color: #f9f9f9; /* Slightly more contrast between rows */
+}
+
+.history-section tr:nth-child(odd) {
+    background-color: #ffffff;
+}
+
+/* History Section Toggle */
+.footer-btn.history {
+    opacity: 0.7;
+}
+
+.footer-btn.history.active {
+    opacity: 1; /* Full opacity when history is active */
+}
+
+/* Dropdown for New Game */
+#newGameScreen select, #newGameScreen button {
+    font-family: 'League Gothic', sans-serif;
+    font-size: 2em; 
+    padding: 10px;
+    margin: 10px;
+    width: 90%; /* Make sure dropdowns are full width for easier selection */
+}
+
+#errorMessage {
+    color: red;
+}
+
+#saveScoreButton {
+    font-family: 'League Gothic', sans-serif;
+    padding: 10px;
+    margin-top: 10px;
+    font-size: 2em; /* Updated button text to 3em */
+    cursor: pointer;
+}

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bashball Scorekeeper</title>
+  <link rel="stylesheet" href="./style/score.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=League+Gothic&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Common Header for all screens -->
+  <header class="app-header">
+    <img src="img/logo.png" alt="Bashball Logo" class="logo">
+    <h1 class="app-title">Bashscore</h1> 
+  </header>
+
+  <!-- Scoring Screen -->
+  <div class="scoring-screen" id="scoringScreen">
+    <h1 class="team-name" id="teamName">Team Name</h1>
+    <div class="score" id="currentScore">0</div>
+    <div class="score-edit" id="scoreEdit" style="display: none;">
+      <input type="number" id="manualScoreInput" min="-10000" max="100000" placeholder="Enter score">
+      <button id="saveScoreButton">Save</button>
+    </div>
+    
+    <div class="score-buttons">
+      <button class="score-btn" id="btnPlus4">+4</button>
+      <button class="score-btn" id="btnPlus3">+3</button>
+      <button class="score-btn" id="btnPlus2">+2</button>
+      <button class="score-btn" id="btnPlus1">+1</button>
+      <button class="score-btn" id="btnMinus1">-1</button>
+    </div>
+
+    <!-- History Section (hidden by default) -->
+    <div id="historySection" class="history-section">
+        <h2>History</h2> <!-- Visible title when history is shown -->
+        <table>
+        <thead>
+            <tr>
+            <th>Points</th> <!-- Renamed "Added" to "Points" -->
+            <th>Score</th>
+            <th>Time</th>
+            </tr>
+        </thead>
+        <tbody id="historyTable">
+            <!-- Scores will be dynamically injected here -->
+        </tbody>
+        </table>
+    </div>
+  </div>
+
+  <!-- New Game Screen -->
+  <div class="new-game-screen" id="newGameScreen" style="display:none;">
+    <h1>Start New Game</h1>
+    <select id="team1Select">
+      <option value="" disabled selected>Pick a team</option>
+      <option value="Mambas">Mambas</option>
+      <option value="Snappers">Snappers</option>
+      <option value="Honey Badgers">Honey Badgers</option>
+      <option value="Hyenas">Hyenas</option>
+      <option value="Scorpions">Scorpions</option>
+      <option value="Hammerheads">Hammerheads</option>
+      <option value="Dartfrogs">Dartfrogs</option>
+      <option value="Crawdads">Crawdads</option>
+    </select>
+    <div class="vs">vs</div>
+    <select id="team2Select" disabled>
+      <option value="" disabled selected>Pick a team</option>
+      <option value="Mambas">Mambas</option>
+      <option value="Snappers">Snappers</option>
+      <option value="Honey Badgers">Honey Badgers</option>
+      <option value="Hyenas">Hyenas</option>
+      <option value="Scorpions">Scorpions</option>
+      <option value="Hammerheads">Hammerheads</option>
+      <option value="Dartfrogs">Dartfrogs</option>
+      <option value="Crawdads">Crawdads</option>
+    </select>
+    <div id="errorMessage" style="color: red; display: none;">Please select two different teams.</div>
+    <button id="startGameButton" disabled>Start Game</button>
+  </div>
+
+  <!-- Footer Section -->
+  <footer class="app-footer">
+    <button id="newGameButton" class="footer-btn"><i class="fa fa-redo"></i></button>
+    <button id="historyButton" class="footer-btn"><i class="fa fa-history"></i></button>
+    <button id="switchTeamsButton" class="footer-btn"><i class="fa fa-exchange-alt"></i></button>
+  </footer>  
+
+  <script type="module" src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js"></script>
+  <script type="module" src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database.js"></script>
+  <script type="module" src="./js/firebaseConfig.js"></script>
+  <script type="module" src="./js/score.js"></script>
+  
+</body>
+</html>
