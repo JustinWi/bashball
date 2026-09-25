@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Bashball Scorekeeper</title>
-  <link rel="stylesheet" href="./style/score.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">  
+  <link rel="stylesheet" href="./style/score.css?v=2">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=League+Gothic&display=swap" rel="stylesheet">
@@ -18,49 +18,32 @@
     </a>
     <img src="img/logo.png" alt="Bashball Logo" class="logo">
     <h1 class="app-title">Bashball Scorekeeper</h1>
-    <div class="field-selector" id="fieldSelector">
-      <span id="selectedField">Select Field</span>
-    </div>
+    <div class="field-selector" id="fieldChip" hidden></div>
   </header>
 
-  <!-- Password Protection Screen -->
-  <div class="password-screen" id="passwordScreen">
-    <div class="password-content">
-      <h2>Scorekeeper Access</h2>
-      <p>Enter the scorekeeper password:</p>
-      <input type="password" id="passwordInput" placeholder="Password">
-      <div class="password-buttons">
-        <button id="submitPassword">Submit</button>
-        <button id="backToHome" onclick="window.location.href='index.html'">Back to Home</button>
-      </div>
-      <div id="passwordError" style="color: red; display: none; margin-top: 10px;">Incorrect password. Please try again.</div>
-    </div>
-  </div>
-
-  <!-- Location Selection Modal -->
-  <div id="locationModal" class="modal">
-    <div class="modal-content">
-      <h2>Select Your Field</h2>
-      <p>Choose which field you're scoring for:</p>
-      <div class="field-buttons">
-        <button class="field-btn" onclick="selectField('DVC')">DVC</button>
-        <button class="field-btn" onclick="selectField('Las Lomas')">Las Lomas</button>
-      </div>
-      <div class="modal-footer">
-        <button class="logout-btn" onclick="logout()">Logout</button>
-      </div>
-    </div>
+  <!-- Shown when this browser won't let us save (private mode, blocked site data, full storage) -->
+  <div class="storage-warning" id="storageWarning" hidden>
+    This browser isn't letting the page save, so the score will be lost if you refresh or close it.
+    Private browsing is the usual cause.
   </div>
 
   <!-- Scoring Screen -->
-  <div class="scoring-screen" id="scoringScreen">
-    <h1 class="team-name" id="teamName">Team Name</h1>
-    <div class="score" id="currentScore">0</div>
-    <div class="score-edit" id="scoreEdit" style="display: none;">
-      <input type="number" id="manualScoreInput" min="-10000" max="100000" placeholder="Enter score">
-      <button id="saveScoreButton">Save</button>
+  <div class="scoring-screen" id="scoringScreen" hidden>
+    <div class="scoreboard" id="scoreboard">
+      <div class="sb-team" id="sbTeamA"><span class="sb-name"></span><span class="sb-score"></span></div>
+      <div class="sb-half" id="sbHalf">Top 1st</div>
+      <div class="sb-team" id="sbTeamB"><span class="sb-name"></span><span class="sb-score"></span></div>
     </div>
-    
+
+    <h1 class="team-name" id="teamName">Team Name</h1>
+    <div class="score" id="currentScore" title="Tap to correct the score">0</div>
+    <div class="score-edit" id="scoreEdit" hidden>
+      <input type="number" id="manualScoreInput" min="0" max="100000" inputmode="numeric" placeholder="Enter score">
+      <button id="saveScoreButton">Save</button>
+      <button id="cancelScoreButton" class="secondary">Cancel</button>
+    </div>
+    <div class="half-net" id="halfNet">This half-inning: 0</div>
+
     <div class="score-buttons">
       <button class="score-btn" id="btnPlus4">+4</button>
       <button class="score-btn" id="btnPlus3">+3</button>
@@ -70,27 +53,31 @@
     </div>
 
     <!-- History Section (hidden by default) -->
-    <div id="historySection" class="history-section">
-        <h2>History</h2> <!-- Visible title when history is shown -->
+    <div id="historySection" class="history-section" hidden>
+        <h2>History</h2>
         <table>
         <thead>
             <tr>
-            <th>Points</th> <!-- Renamed "Added" to "Points" -->
+            <th>Points</th>
             <th>Score</th>
+            <th>Half</th>
             <th>Time</th>
             </tr>
         </thead>
-        <tbody id="historyTable">
-            <!-- Scores will be dynamically injected here -->
-        </tbody>
+        <tbody id="historyTable"></tbody>
         </table>
     </div>
   </div>
 
   <!-- New Game Screen -->
-  <div class="new-game-screen" id="newGameScreen" style="display:none;">
+  <div class="new-game-screen" id="newGameScreen" hidden>
     <h1>Start New Game</h1>
-    <div class="field-display">Field: <span id="newGameField">-</span></div>
+    <div class="field-display">Field</div>
+    <div class="field-choice" id="fieldChoice">
+      <button type="button" class="field-opt" data-field="DVC">DVC</button>
+      <button type="button" class="field-opt" data-field="Las Lomas">Las Lomas</button>
+    </div>
+    <label class="select-label" for="team1Select">Bats first</label>
     <select id="team1Select">
       <option value="" disabled selected>Pick a team</option>
       <option value="Mambas">Mambas</option>
@@ -103,6 +90,7 @@
       <option value="Crawdads">Crawdads</option>
     </select>
     <div class="vs">vs</div>
+    <label class="select-label" for="team2Select">Bats second</label>
     <select id="team2Select" disabled>
       <option value="" disabled selected>Pick a team</option>
       <option value="Mambas">Mambas</option>
@@ -114,21 +102,53 @@
       <option value="Dartfrogs">Dartfrogs</option>
       <option value="Crawdads">Crawdads</option>
     </select>
-    <div id="errorMessage" style="color: red; display: none;">Please select two different teams.</div>
+    <div id="errorMessage" hidden>Please select two different teams.</div>
     <button id="startGameButton" disabled>Start Game</button>
+    <button id="cancelNewGameButton" class="secondary" hidden>Back to current game</button>
   </div>
+
+  <!-- Previous Games -->
+  <div class="games-screen" id="gamesScreen" hidden>
+    <h1>Games on this phone</h1>
+    <ul class="games-list" id="gamesList"></ul>
+    <p class="games-empty" id="gamesEmpty" hidden>No games yet.</p>
+  </div>
+
+  <!-- One game's details -->
+  <div class="games-screen" id="gameDetailScreen" hidden>
+    <button class="back-btn" id="backToGames"><i class="fas fa-chevron-left"></i> All games</button>
+    <h1 id="detailTitle"></h1>
+    <p class="detail-meta" id="detailMeta"></p>
+    <div class="line-score-wrap"><table class="line-score" id="lineScore"></table></div>
+    <p class="detail-note" id="detailNote" hidden></p>
+    <div class="detail-actions">
+      <button id="resumeGameButton">Score this game</button>
+      <button id="deleteGameButton" class="danger">Delete game</button>
+    </div>
+  </div>
+
+  <!-- In-page confirm (no browser dialogs) -->
+  <div class="modal" id="confirmModal" hidden>
+    <div class="modal-content">
+      <h2 id="confirmText">Are you sure?</h2>
+      <div class="modal-buttons">
+        <button id="confirmYes" class="danger">Delete</button>
+        <button id="confirmNo" class="secondary">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
   <!-- Footer Section -->
   <footer class="app-footer">
-    <button id="newGameButton" class="footer-btn"><i class="fa fa-redo"></i></button>
-    <button id="historyButton" class="footer-btn"><i class="fa fa-history"></i></button>
-    <button id="switchTeamsButton" class="footer-btn"><i class="fa fa-exchange-alt"></i></button>
-  </footer>  
+    <button id="newGameButton" class="footer-btn"><i class="fa fa-plus-circle"></i><span>New</span></button>
+    <button id="gamesButton" class="footer-btn"><i class="fa fa-list"></i><span>Games</span></button>
+    <button id="undoButton" class="footer-btn"><i class="fa fa-undo"></i><span>Undo</span></button>
+    <button id="historyButton" class="footer-btn"><i class="fa fa-history"></i><span>Log</span></button>
+    <button id="switchTeamsButton" class="footer-btn"><i class="fa fa-exchange-alt"></i><span>Switch</span></button>
+  </footer>
 
-  <script type="module" src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js"></script>
-  <script type="module" src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database.js"></script>
-  <script type="module" src="./js/firebaseConfig.js"></script>
-  <script type="module" src="./js/score.js"></script>
-  
+  <script type="module" src="./js/score.js?v=2"></script>
 </body>
 </html>

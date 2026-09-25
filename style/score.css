@@ -283,96 +283,373 @@ body {
     cursor: pointer;
 }
 
-/* Password Screen */
-.password-screen {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: #000;
-    z-index: 9999; /* Higher than all other elements */
-    overflow: hidden; /* Prevent any scrolling */
+[hidden] {
+    display: none !important;
 }
 
-.password-content {
-    background-color: #302f2f;
-    padding: 40px;
-    border-radius: 15px;
-    text-align: center;
-    border: 2px solid #fff;
-    max-width: 400px;
-    width: 90%;
+.field-selector {
+    cursor: default;
 }
 
-.password-content h2 {
+button.secondary {
+    background-color: #333;
     color: #fff;
-    margin-bottom: 20px;
-    font-family: 'League Gothic', sans-serif;
-    font-weight: normal;
-    font-size: 32px;
+    border: 1px solid #666;
 }
 
-.password-content p {
-    color: #ccc;
-    margin-bottom: 25px;
+button.danger {
+    background-color: #c62828;
+    color: #fff;
+    border: none;
+}
+
+/* Storage warning (private mode etc.) */
+body.storage-warn {
+    padding-top: 64px;
+}
+
+.storage-warning {
+    position: fixed;
+    top: 70px;
+    left: 0;
+    right: 0;
+    z-index: 999;
+    background: #b71c1c;
+    color: #fff;
     font-family: 'Roboto', sans-serif;
+    font-size: 14px;
+    padding: 8px 16px;
 }
 
-#passwordInput {
-    width: 100%;
-    padding: 15px;
-    font-size: 18px;
-    border: 2px solid #ccc;
-    border-radius: 10px;
-    margin-bottom: 20px;
-    background-color: #fff;
-    color: #000;
-    box-sizing: border-box;
+/* Scoreboard strip: both teams and the half-inning */
+.scoreboard {
+    display: flex;
+    align-items: stretch;
+    justify-content: space-between;
+    gap: 8px;
+    width: 90%;
+    max-width: 520px;
+    margin: 0 auto 10px;
 }
 
-.password-buttons {
+.sb-team {
+    flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    align-items: center;
+    padding: 4px 6px;
+    border: 2px solid transparent;
+    border-radius: 10px;
+    opacity: 0.6;
+    min-width: 0;
 }
 
-.password-buttons button {
-    padding: 15px 20px;
+.sb-team.batting {
+    border-color: currentColor;
+    opacity: 1;
+}
+
+.sb-name {
+    font-size: 20px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.sb-score {
+    font-size: 30px;
+    color: #fff;
+}
+
+.sb-half {
+    align-self: center;
+    font-size: 22px;
+    color: #ccc;
+    white-space: nowrap;
+}
+
+.half-net {
+    font-family: 'Roboto', sans-serif;
+    font-size: 15px;
+    color: #bbb;
+    margin: 2px 0 12px;
+}
+
+.score {
+    cursor: pointer;
+}
+
+.score-edit button {
+    font-family: 'League Gothic', sans-serif;
+    font-size: 2em;
+    padding: 6px 16px;
+    margin: 10px 4px 0;
+}
+
+#btnMinus1.is-blocked {
+    opacity: 0.35;
+}
+
+/* Toast */
+.toast {
+    position: fixed;
+    left: 16px;
+    right: 16px;
+    top: 86px;
+    z-index: 3000;
+    margin: 0 auto;
+    max-width: 480px;
+    background: #fff;
+    color: #111;
+    font-family: 'Roboto', sans-serif;
+    font-size: 16px;
+    line-height: 1.35;
+    padding: 12px 16px;
+    border-radius: 10px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+}
+
+.toast.warn {
+    background: #ffd54f;
+}
+
+/* Footer labels */
+.footer-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.footer-btn span {
+    font-family: 'Roboto', sans-serif;
+    font-size: 12px;
+    color: #fff;
+}
+
+.footer-btn:disabled {
+    opacity: 0.25;
+    cursor: default;
+}
+
+/* New game */
+.select-label {
+    display: block;
+    font-family: 'Roboto', sans-serif;
+    font-size: 14px;
+    color: #bbb;
+    margin-top: 6px;
+}
+
+.field-choice {
+    display: flex;
+    gap: 10px;
+    width: 90%;
+    margin: 0 auto 10px;
+}
+
+#newGameScreen .field-opt {
+    flex: 1;
+    margin: 0;
+    width: auto;
+    background: #222;
+    color: #fff;
+    border: 2px solid #555;
+    border-radius: 25px;
+}
+
+#newGameScreen .field-opt.selected[data-field="DVC"] {
+    background: #ff008c;
+    border-color: #ff008c;
+}
+
+#newGameScreen .field-opt.selected[data-field="Las Lomas"] {
+    background: #008cff;
+    border-color: #008cff;
+}
+
+/* Previous games */
+.games-screen {
+    box-sizing: border-box;
+    width: 100%;
+    margin-top: 70px;
+    margin-bottom: var(--total-footer-height);
+    padding: 20px 16px;
+    flex: 1;
+}
+
+.games-screen h1 {
+    font-weight: normal;
     font-size: 36px;
+    margin: 0 0 12px;
+}
+
+.games-list {
+    list-style: none;
+    margin: 0 auto;
+    padding: 0;
+    max-width: 560px;
+}
+
+.game-item {
+    position: relative;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 10px;
+    padding: 12px 10px;
+    background: #1c1c1c;
+    border: 1px solid #333;
+    border-radius: 12px;
+    color: #fff;
+    font-family: 'League Gothic', sans-serif;
+    cursor: pointer;
+}
+
+.gl-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+}
+
+.gl-team {
+    flex: 1;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    min-width: 0;
+}
+
+.gl-team:first-child {
+    justify-content: flex-end;
+}
+
+.gl-team:last-child {
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+}
+
+.gl-name {
+    font-size: 24px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.gl-score {
+    font-size: 30px;
+    opacity: 0.75;
+}
+
+.gl-team.lead .gl-score {
+    opacity: 1;
+}
+
+.gl-dash {
+    font-size: 24px;
+    color: #777;
+}
+
+.gl-meta {
+    font-family: 'Roboto', sans-serif;
+    font-size: 13px;
+    color: #aaa;
+}
+
+.gl-badge {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    font-family: 'Roboto', sans-serif;
+    font-size: 11px;
+    background: #4CAF50;
+    color: #fff;
+    padding: 2px 6px;
+    border-radius: 8px;
+}
+
+.games-empty, .detail-meta, .detail-note {
+    font-family: 'Roboto', sans-serif;
+    color: #aaa;
+    font-size: 14px;
+}
+
+.back-btn {
+    display: block;
+    background: none;
     border: none;
+    color: #ccc;
+    font-family: 'Roboto', sans-serif;
+    font-size: 15px;
+    padding: 6px 0;
+    margin-bottom: 6px;
+    cursor: pointer;
+}
+
+.line-score-wrap {
+    overflow-x: auto;
+    max-width: 100%;
+    margin: 12px auto;
+}
+
+.line-score {
+    border-collapse: collapse;
+    margin: 0 auto;
+    font-size: 22px;
+}
+
+.line-score th, .line-score td {
+    padding: 6px 10px;
+    border-bottom: 1px solid #333;
+    font-weight: normal;
+    text-align: center;
+    min-width: 22px;
+}
+
+.line-score tbody th {
+    text-align: left;
+    white-space: nowrap;
+}
+
+.line-score td.now {
+    background: #2a2a2a;
+}
+
+.line-score td.total {
+    font-size: 26px;
+    border-left: 1px solid #555;
+}
+
+.detail-actions, .modal-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 400px;
+    margin: 20px auto 0;
+}
+
+.detail-actions button, .modal-buttons button {
+    font-family: 'League Gothic', sans-serif;
+    font-size: 28px;
+    padding: 10px;
     border-radius: 25px;
     cursor: pointer;
-    transition: background-color 0.3s ease;
-    font-family: 'League Gothic', sans-serif;
-    font-weight: normal;
 }
 
-#submitPassword {
-    background-color: #ff0080;
-    color: white;
+#resumeGameButton {
+    background: #4CAF50;
+    color: #fff;
+    border: none;
 }
 
-#submitPassword:hover {
-    background-color: #ff0080;
-}
-
-#backToHome {
-    background-color: #ffffff;
-    color: #000000;
-    border: 2px solid #ddd;
-}
-
-#backToHome:hover {
-    background-color: #f5f5f5;
-}
-
-/* Modal Styles */
+/* Modal */
 .modal {
-    display: none;
+    display: block;
     position: fixed;
     z-index: 2000;
     left: 0;
@@ -384,10 +661,10 @@ body {
 
 .modal-content {
     background-color: #302f2f;
-    margin: 15% auto;
-    padding: 30px;
+    margin: 30% auto 0;
+    padding: 24px;
     border-radius: 15px;
-    width: 80%;
+    width: 85%;
     max-width: 400px;
     text-align: center;
     border: 2px solid #fff;
@@ -395,69 +672,11 @@ body {
 
 .modal-content h2 {
     color: #fff;
-    margin-bottom: 20px;
-    font-family: 'League Gothic', sans-serif;
-    font-weight: normal;
-    font-size: 28px;
-}
-
-.modal-content p {
-    color: #ccc;
-    margin-bottom: 25px;
+    margin: 0;
     font-family: 'Roboto', sans-serif;
-}
-
-.field-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-.field-btn {
-    background-color: #ff008c;
-    color: white;
-    border: none;
-    padding: 15px 20px;
+    font-weight: normal;
     font-size: 18px;
-    border-radius: 25px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-    font-family: 'League Gothic', sans-serif;
-    font-weight: normal;
-}
-
-.field-btn:hover {
-    background-color: #a04577;
-}
-
-.field-btn:nth-child(2) {
-    background-color: #008cff;
-}
-
-.field-btn:nth-child(2):hover {
-    background-color: #1976D2;
-}
-
-.modal-footer {
-    margin-top: 20px;
-    padding-top: 15px;
-    border-top: 1px solid #555;
-}
-
-.logout-btn {
-    background-color: #f44336;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    font-size: 14px;
-    border-radius: 20px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-    font-family: 'Roboto', sans-serif;
-}
-
-.logout-btn:hover {
-    background-color: #da190b;
+    line-height: 1.4;
 }
 
 /* Mobile Optimizations */
@@ -478,7 +697,16 @@ body {
         padding: 12px;
     }
     
-    .scoring-screen, .new-game-screen {
+    .scoring-screen {
+        justify-content: flex-start;
+        padding-top: 16px;
+    }
+
+    .storage-warning {
+        top: 80px;
+    }
+
+    .scoring-screen, .new-game-screen, .games-screen {
         margin-top: 80px; /* Space for larger mobile header */
         margin-bottom: var(--total-footer-height);
     }
@@ -513,33 +741,9 @@ body {
         right: 20px; /* Slightly less padding on mobile but still away from edge */
     }
     
-    .password-content {
-        padding: 25px;
-        width: 95%;
-    }
-    
-    .password-content h2 {
-        font-size: 26px;
-    }
-    
     .modal-content {
         width: 90%;
         padding: 20px;
-    }
-    
-    .field-btn {
-        padding: 12px 15px;
-        font-size: 16px;
-    }
-    
-    .password-buttons button {
-        padding: 12px 15px;
-        font-size: 24px;
-    }
-    
-    #passwordInput {
-        padding: 12px;
-        font-size: 16px;
     }
     
     .team-name {
