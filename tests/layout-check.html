@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Scorekeeper Layout Check</title>
+<style>
+  body { font: 14px system-ui, sans-serif; margin: 16px; background: #fff; color: #111; }
+  iframe { border: 1px solid #888; display: block; margin-top: 12px; }
+  pre { white-space: pre-wrap; }
+  .bad { color: #b00020; } .good { color: #1b7f3b; }
+</style>
+</head>
+<body>
+<!--
+  Loads ../index.html at a range of phone viewports (visible area, after browser bars) and
+  walks every screen. Uses this origin's localStorage, so it clears it between sizes.
+  Open http://localhost:<port>/tests/layout-check.html and read the report (window.REPORT).
+-->
+<h1>Scorekeeper layout check</h1>
+<pre id="out">running…</pre>
+<iframe id="ph"></iframe>
+<script type="module">
+const SIZES = [
+  ['iPhone SE 1st gen, Safari', 320, 460],
+  ['Small Android', 360, 560],
+  ['iPhone SE 2/3, Safari', 375, 553],
+  ['iPhone 12–15, Safari', 390, 664],
+  ['iPhone 12–15, home screen', 390, 844],
+  ['Pixel 7, Chrome', 412, 780],
+  ['iPhone Pro Max, Safari', 430, 740],
+  ['Landscape iPhone', 750, 300],
+  ['Landscape large', 932, 330],
+];
+const TOL = 0.5;
+const frame = document.getElementById('ph');
+const load = () => new Promise(r => { frame.onload = r; frame.src = '../index.html?t=' + Date.now(); });
+// Yield without setTimeout: Chrome throttles timers in background tabs to ~1/minute.
+const tick = () => new Promise(r => { const c = new MessageChannel(); c.port1.onmessage = () => r(); c.port2.postMessage(0); });
+
+function visible(el, win) {
+  if (!el.getClientRects().length) return false;
+  const cs = win.getComputedStyle(el);
+  return cs.visibility !== 'hidden' && cs.display !== 'none' && +cs.opacity !== 0;
+}
+
+function check(label, W, H, extra = []) {
+  const win = frame.contentWindow, d = win.document, issues = [];
+  const all = [...d.body.querySelectorAll('*')].filter(el => visible(el, win));
+  for (const el of all) {
+    if (el.closest('.line-score-wrap') && !el.classList.contains('line-score-wrap')) continue; // scrolls on purpose
+    if (el.closest('select')) continue;
+    const r = el.getBoundingClientRect();
+    if (r.width === 0 || r.height === 0) continue;
+    if (r.right > W + TOL || r.left < -TOL) issues.push(`overflows sideways: ${desc(el)} [${Math.round(r.left)}..${Math.round(r.right)}] of ${W}`);
+  }
+  if (d.documentElement.scrollWidth > W + 1) issues.push(`page scrolls sideways (${d.documentElement.scrollWidth}px)`);
+  // text that is cut off without an ellipsis
+  for (const el of all.filter(e => ['BUTTON', 'H1', 'H2', 'SPAN', 'TD', 'TH', 'P', 'DIV', 'LABEL'].includes(e.tagName) && e.children.length === 0 && e.textContent.trim())) {
+    const cs = win.getComputedStyle(el);
+    if (cs.textOverflow === 'ellipsis') continue;
+    if (el.scrollWidth > el.clientWidth + 1 && cs.overflow !== 'visible') issues.push(`text cut off: ${desc(el)}`);
+  }
+  // footer labels must not collide
+  const labels = [...d.querySelectorAll('.footer-btn span')].map(s => s.getBoundingClientRect());
+  for (let i = 1; i < labels.length; i++) if (labels[i].left < labels[i - 1].right - TOL) issues.push(`footer labels overlap (${i - 1} and ${i})`);
+  // header parts inside the header and not overlapping
+  const logo = d.querySelector('.logo').getBoundingClientRect(), title = d.querySelector('.app-title').getBoundingClientRect();
+  if (title.left < logo.right - TOL) issues.push('header title overlaps logo');
+  if (title.height > 60) issues.push(`header title wraps (${Math.round(title.height)}px tall)`);
+  // every control on screen can actually be tapped once scrolled to
+  const header = d.querySelector('.app-header').getBoundingClientRect();
+  const footer = d.querySelector('.app-footer').getBoundingClientRect();
+  const modalOpen = !d.getElementById('confirmModal').hidden; // an open dialog covers the page on purpose
+  const controls = all.filter(e => (e.tagName === 'BUTTON' || e.tagName === 'SELECT') && !e.closest('.app-footer') && !e.closest('.toast')
+    && (modalOpen ? !!e.closest('.modal') : !e.closest('.modal')));
+  for (const el of new Set([...controls, ...extra.map(s => d.querySelector(s)).filter(Boolean)])) {
+    el.scrollIntoView({ block: 'center' });
+    const r = el.getBoundingClientRect();
+    const x = r.left + r.width / 2, y = r.top + r.height / 2;
+    const hit = d.elementFromPoint(x, y);
+    if (!hit || !(hit === el || el.contains(hit))) issues.push(`can't tap ${desc(el)}: covered by ${hit ? desc(hit) : 'nothing (off screen)'} at y=${Math.round(y)}`);
+    else if (!el.closest('.modal') && (r.top < header.bottom - TOL || r.bottom > footer.top + TOL)) { // the dialog sits above both bars
+      // centre is tappable but part of it hides under a fixed bar: only flag if it can't be scrolled clear
+      const room = footer.top - header.bottom;
+      if (r.height <= room) issues.push(`${desc(el)} can't be scrolled clear of the header/footer`);
+    }
+    if (r.height < 40 && el.tagName === 'BUTTON' && !el.classList.contains('back-btn')) issues.push(`small tap target: ${desc(el)} ${Math.round(r.width)}x${Math.round(r.height)}`);
+  }
+  for (const b of d.querySelectorAll('.app-footer .footer-btn')) {
+    const r = b.getBoundingClientRect();
+    if (r.bottom > H + TOL || r.right > W + TOL) issues.push(`footer button off screen: ${desc(b)}`);
+  }
+  win.scrollTo(0, 0);
+  return { label, issues };
+}
+
+function desc(el) {
+  return el.id ? '#' + el.id : `${el.tagName.toLowerCase()}${el.className && typeof el.className === 'string' ? '.' + el.className.trim().split(/\s+/).join('.') : ''}${el.textContent.trim() ? ` "${el.textContent.trim().slice(0, 20)}"` : ''}`;
+}
+
+async function run() {
+  const report = [];
+  for (const [name, W, H] of SIZES) {
+    frame.style.width = W + 'px'; frame.style.height = H + 'px';
+    localStorage.clear();
+    await load(); await tick();
+    const win = frame.contentWindow, d = win.document, $ = id => d.getElementById(id);
+    const setSel = (id, v) => { $(id).value = v; $(id).dispatchEvent(new win.Event('change')); };
+    const res = [];
+    res.push(check('new game (empty)', W, H));
+    setSel('team1Select', 'Honey Badgers'); setSel('team2Select', 'Honey Badgers');
+    res.push(check('new game (same team error)', W, H));
+    setSel('team2Select', 'Hammerheads'); $('startGameButton').click(); await tick();
+    res.push(check('scoring (start)', W, H, ['#currentScore']));
+    { // mid-game, every score button must be on screen without scrolling
+      win.scrollTo(0, 0);
+      const hb = d.querySelector('.app-header').getBoundingClientRect().bottom, ft = d.querySelector('.app-footer').getBoundingClientRect().top;
+      const off = ['btnPlus4', 'btnPlus3', 'btnPlus2', 'btnPlus1', 'btnMinus1', 'editScoreButton', 'currentScore']
+        .filter(id => { const r = $(id).getBoundingClientRect(); return r.top < hb - TOL || r.bottom > ft + TOL; });
+      const sizes = ['btnPlus4', 'btnMinus1'].map(id => Math.round($(id).getBoundingClientRect().height));
+      res.push({ label: `scoring fits without scrolling (buttons ${sizes.join('/')}px tall)`, issues: off.length ? [`needs scrolling to reach: ${off.join(', ')}`] : [] });
+      res.at(-1).info = true;
+    }
+    for (let i = 0; i < 9; i++) { $('btnPlus4').click(); $('btnPlus3').click(); $('btnPlus2').click(); $('switchTeamsButton').click(); }
+    $('btnPlus1').click(); $('btnPlus1').click();
+    res.push(check('scoring (Top 5th, 2-digit scores)', W, H, ['#currentScore']));
+    $('btnMinus1').click(); $('btnMinus1').click(); $('btnMinus1').click(); await tick();
+    res.push(check('scoring (clamp message showing)', W, H));
+    $('editScoreButton').click(); await tick();
+    res.push(check('scoring (edit open)', W, H));
+    $('cancelScoreButton').click();
+    $('historyButton').click(); await tick();
+    res.push(check('scoring (log open)', W, H));
+    $('historyButton').click();
+    for (let i = 0; i < 9; i++) { $('switchTeamsButton').click(); $('btnPlus4').click(); }
+    $('newGameButton').click(); setSel('team1Select', 'Crawdads'); setSel('team2Select', 'Scorpions'); $('startGameButton').click();
+    $('btnPlus2').click();
+    $('newGameButton').click(); await tick();
+    res.push(check('new game (with cancel)', W, H));
+    $('cancelNewGameButton').click();
+    $('gamesButton').click(); await tick();
+    res.push(check('games list', W, H));
+    d.querySelectorAll('.game-item')[1].click(); await tick();
+    const wrap = d.querySelector('.line-score-wrap');
+    res.push(check('game detail (9+ innings)', W, H));
+    const lineScrolls = wrap.scrollWidth > wrap.clientWidth;
+    $('deleteGameButton').click(); await tick();
+    res.push(check('delete confirm', W, H, ['#confirmYes', '#confirmNo']));
+    $('confirmNo').click();
+    report.push({ name, W, H, lineScoreScrollsSideways: lineScrolls, fit: res.find(r => r.info).label, screens: res.filter(r => r.issues.length), clean: res.filter(r => !r.issues.length).map(r => r.label) });
+  }
+  localStorage.clear();
+  window.REPORT = report;
+  const out = document.getElementById('out');
+  out.innerHTML = report.map(r => `<b>${r.name} ${r.W}×${r.H}</b>${r.lineScoreScrollsSideways ? ' (line score scrolls sideways inside its box)' : ''}\n` +
+    (r.screens.length ? r.screens.map(s => `  <span class="bad">${s.label}</span>\n` + s.issues.map(i => '    - ' + i).join('\n')).join('\n') : '  <span class="good">all screens clean</span>')).join('\n\n');
+}
+run().catch(e => { document.getElementById('out').textContent = 'ERROR ' + e.stack; window.REPORT = { error: String(e) }; });
+</script>
+</body>
+</html>

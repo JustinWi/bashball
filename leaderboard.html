@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Leaderboard</title>
+  <link rel="stylesheet" href="./style/leaderboard.css">
+  <link href="https://fonts.googleapis.com/css2?family=League+Gothic&family=Roboto&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <script type="module" src="./js/leaderboard.js"></script>
+</head>
+<body>
+    <header class="app-header">
+    <img src="img/logo.png" alt="Bashball Logo" class="logo">
+    <h1 class="app-title">Bashball Live</h1>
+    <div class="field-selector" id="fieldSelector">
+      <span id="selectedField">Select Field</span>
+    </div>
+    <a href="score.html" class="scorekeeper-link" title="Scorekeeper">
+      <i class="fas fa-clipboard"></i>
+    </a>
+    <a href="coaches.html" class="coaches-link" title="Coaches">
+      <i class="fas fa-users"></i>
+    </a>
+  </header>
+
+  <!-- Location Selection Modal -->
+  <div id="locationModal" class="modal">
+    <div class="modal-content">
+      <h2>Select Your Field</h2>
+      <div class="field-buttons">
+        <button class="field-btn" onclick="selectField('DVC')">DVC</button>
+        <button class="field-btn" onclick="selectField('Las Lomas')">Las Lomas</button>
+      </div>
+    </div>
+  </div>
+  <div id="leaderboard">
+    <!-- Live scores will be dynamically updated here -->
+  </div>
+  <footer class="app-footer">
+  </footer>  
+</body>
+</html>

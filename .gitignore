@@ -48,3 +48,6 @@ Thumbs.db
 *.mov
 *.wmv
 
+
+# Separate app, not part of the bashball site
+DodgersLineup/

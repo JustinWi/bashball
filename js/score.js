@@ -1,9 +1,9 @@
 // Bashball scorekeeper UI. Everything is stored on this phone (see scoreState.js); there is no
 // login and nothing is sent to a server.
 import {
-    TEAM_COLORS, STORAGE_KEY, makeStore, migrateLegacy, currentGame, createGame, derive, addScore,
+    teamColor, STORAGE_KEY, makeStore, migrateLegacy, currentGame, createGame, derive, addScore,
     canDeduct, switchHalf, setTotal, undo, deleteGame, gamesNewestFirst, halfLabel
-} from './scoreState.js';
+} from './scoreState.js?v=3';
 
 const $ = id => document.getElementById(id);
 
@@ -12,9 +12,13 @@ let state = store.load();
 if (store.ok && migrateLegacy(state, store.storage)) store.save(state);
 else if (store.ok && !state.migrated) { state.migrated = true; store.save(state); }
 
+// Ask the browser not to clear our data under storage pressure (and, on Safari, it helps
+// keep it past the 7-day cleanup for sites you haven't visited). Best effort only.
+try { navigator.storage && navigator.storage.persist && navigator.storage.persist().catch(() => {}); } catch { /* ignore */ }
+
 let screen = 'scoring';
 let detailGameId = null;
-let newGameField = state.prefs.field;
+let unsaved = false; // true while the last save failed: memory is ahead of storage
 
 function setStorageWarning(on) {
     $('storageWarning').hidden = !on;
@@ -22,7 +26,16 @@ function setStorageWarning(on) {
 }
 
 function persist() {
-    setStorageWarning(!store.save(state));
+    const saved = store.save(state);
+    unsaved = !saved;
+    setStorageWarning(!saved);
+}
+
+// Before changing anything, re-read what's saved, so a second tab (or a tab the phone kept
+// asleep in the background) never writes an old copy over newer scores.
+function fresh() {
+    if (store.ok && !unsaved) state = store.load();
+    return state;
 }
 
 // ---- Helpers ------------------------------------------------------------------------------
@@ -38,6 +51,10 @@ function formatTime(ts) {
     return t.toDateString() === new Date().toDateString()
         ? time
         : `${time} ${t.getMonth() + 1}/${t.getDate()}/${t.getFullYear() % 100}`;
+}
+
+function formatClock(ts) {
+    return new Date(ts).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
 }
 
 function formatDate(ts) {
@@ -94,11 +111,6 @@ function show(name) {
 
 function render() {
     const game = currentGame(state);
-    $('fieldChip').hidden = !(game && game.field && screen === 'scoring');
-    if (game && game.field) {
-        $('fieldChip').textContent = game.field;
-        $('fieldChip').style.backgroundColor = game.field === 'DVC' ? '#ff008c' : '#008cff';
-    }
     if (screen === 'scoring') renderScoring(game);
     else if (screen === 'new') renderNewGame(game);
     else if (screen === 'games') renderGames();
@@ -109,14 +121,14 @@ function renderScoring(game) {
     if (!game) { show('new'); return; }
     const d = derive(game);
     const team = d.batting;
-    const color = TEAM_COLORS[team];
+    const color = teamColor(team);
     document.documentElement.style.setProperty('--team-color', color);
 
     game.teams.forEach((t, i) => {
         const box = $(i === 0 ? 'sbTeamA' : 'sbTeamB');
         box.querySelector('.sb-name').textContent = t;
         box.querySelector('.sb-score').textContent = d.totals[t];
-        box.style.color = TEAM_COLORS[t];
+        box.style.color = teamColor(t);
         box.classList.toggle('batting', t === team);
     });
     $('sbHalf').textContent = d.halfLabel;
@@ -149,7 +161,6 @@ function renderScoring(game) {
 
 function renderNewGame(game) {
     $('cancelNewGameButton').hidden = !game;
-    for (const b of document.querySelectorAll('.field-opt')) b.classList.toggle('selected', b.dataset.field === newGameField);
 }
 
 function renderGames() {
@@ -160,15 +171,16 @@ function renderGames() {
         const [a, b] = g.teams;
         const lead = d.totals[a] === d.totals[b] ? null : (d.totals[a] > d.totals[b] ? a : b);
         const side = t => el('span', { className: `gl-team${t === lead ? ' lead' : ''}` }, [
-            el('span', { className: 'gl-name', textContent: t, style: `color:${TEAM_COLORS[t]}` }),
+            el('span', { className: 'gl-name', textContent: t, style: `color:${teamColor(t)}` }),
             el('span', { className: 'gl-score', textContent: d.totals[t] })
         ]);
-        const meta = [g.field, formatDate(g.startedAt), d.halfLabel].filter(Boolean).join(' · ');
+        const meta = [g.field, `${formatDate(g.startedAt)} ${formatClock(g.startedAt)}`, d.halfLabel].filter(Boolean).join(' · ');
+        const metaLine = el('span', { className: 'gl-meta' }, meta);
+        if (g.id === state.currentGameId) metaLine.prepend(el('span', { className: 'gl-badge', textContent: 'Current' }));
         const btn = el('button', { className: 'game-item' }, [
             el('span', { className: 'gl-row' }, [side(a), el('span', { className: 'gl-dash', textContent: '–' }), side(b)]),
-            el('span', { className: 'gl-meta', textContent: meta }),
+            metaLine,
         ]);
-        if (g.id === state.currentGameId) btn.append(el('span', { className: 'gl-badge', textContent: 'Current' }));
         btn.addEventListener('click', () => { detailGameId = g.id; show('detail'); });
         return el('li', {}, btn);
     }));
@@ -180,17 +192,17 @@ function renderDetail() {
     const d = derive(g);
     const [a, b] = g.teams;
     $('detailTitle').replaceChildren(
-        el('span', { textContent: a, style: `color:${TEAM_COLORS[a]}` }),
+        el('span', { textContent: a, style: `color:${teamColor(a)}` }),
         ` ${d.totals[a]} – ${d.totals[b]} `,
-        el('span', { textContent: b, style: `color:${TEAM_COLORS[b]}` }));
-    $('detailMeta').textContent = [g.field, `${formatDate(g.startedAt)} ${formatTime(g.startedAt).split(' ').slice(0, 2).join(' ')}`,
+        el('span', { textContent: b, style: `color:${teamColor(b)}` }));
+    $('detailMeta').textContent = [g.field, `${formatDate(g.startedAt)} ${formatClock(g.startedAt)}`,
         `Last half: ${d.halfLabel}`].filter(Boolean).join(' · ');
 
     const innings = Math.max(1, Math.ceil(d.halves.length / 2));
     const head = el('tr', {}, [el('th', { textContent: '' }),
         ...Array.from({ length: innings }, (_, i) => el('th', { textContent: i + 1 })), el('th', { textContent: 'R' })]);
     const row = (t, offset) => el('tr', {}, [
-        el('th', { textContent: t, style: `color:${TEAM_COLORS[t]}` }),
+        el('th', { textContent: t, style: `color:${teamColor(t)}` }),
         ...Array.from({ length: innings }, (_, i) => {
             const h = i * 2 + offset;
             return el('td', { textContent: h < d.halves.length ? d.halves[h] : '', className: h === d.halfIndex ? 'now' : '' });
@@ -208,8 +220,22 @@ function renderDetail() {
 
 // ---- Scoring actions ----------------------------------------------------------------------
 
+// The game on this screen, re-read from storage, ready to change.
+function gameForAction() {
+    const id = state.currentGameId;
+    fresh();
+    const game = id && state.games[id];
+    if (!game) {
+        if (id) toast('That game was deleted in another tab.');
+        render();
+        return null;
+    }
+    state.currentGameId = id; // the tab you're tapping in is the game you're scoring
+    return game;
+}
+
 function score(points) {
-    const game = currentGame(state);
+    const game = gameForAction();
     if (!game) return;
     const r = addScore(game, points);
     if (r.blocked) {
@@ -225,48 +251,54 @@ function score(points) {
 ['btnPlus4', 'btnPlus3', 'btnPlus2', 'btnPlus1'].forEach((id, i) => $(id).addEventListener('click', () => score(4 - i)));
 $('btnMinus1').addEventListener('click', () => score(-1));
 
+// Switching teams hands the bats to the other team, which also starts a new half-inning.
 $('switchTeamsButton').addEventListener('click', () => {
-    const game = currentGame(state);
+    const game = gameForAction();
     if (!game) return;
     const d = switchHalf(game);
     persist();
     render();
-    toast(`${d.halfLabel}: ${d.batting} batting`);
+    toast(`Now scoring ${d.batting} (${d.halfLabel})`);
 });
 
 $('undoButton').addEventListener('click', () => {
-    const game = currentGame(state);
+    const game = gameForAction();
     if (!game) return;
     const ev = undo(game);
     if (!ev) { toast('Nothing to undo'); return; }
     persist();
     render();
     if (ev.type === 'score') toast(`Undid ${ev.points > 0 ? '+' : ''}${ev.points} for ${ev.team}`);
-    else if (ev.type === 'switch') toast(`Undid switch: back to ${derive(game).halfLabel}, ${derive(game).batting} batting`);
+    else if (ev.type === 'switch') toast(`Undid switch teams: back to ${derive(game).batting} (${derive(game).halfLabel})`);
     else toast(`Undid correction for ${ev.team}`);
 });
 
 $('historyButton').addEventListener('click', () => {
+    fresh();
     state.prefs.historyVisible = !state.prefs.historyVisible;
     $('historyButton').classList.toggle('active', state.prefs.historyVisible);
     persist();
     render();
 });
 
-// Tap the big score to correct it by hand
-$('currentScore').addEventListener('click', () => {
+// Edit button (or tapping the big score) corrects the score by hand
+function openScoreEdit() {
     const game = currentGame(state);
     if (!game) return;
     $('scoreEdit').hidden = false;
     $('manualScoreInput').value = derive(game).totals[derive(game).batting];
     $('manualScoreInput').focus();
-});
+    $('manualScoreInput').select();
+}
+$('currentScore').addEventListener('click', openScoreEdit);
+$('editScoreButton').addEventListener('click', openScoreEdit);
 function closeScoreEdit() { $('scoreEdit').hidden = true; }
 $('cancelScoreButton').addEventListener('click', closeScoreEdit);
 $('saveScoreButton').addEventListener('click', () => {
-    const game = currentGame(state);
     const value = parseInt($('manualScoreInput').value, 10);
-    if (!game || isNaN(value)) return;
+    if (isNaN(value)) return;
+    const game = gameForAction();
+    if (!game) { closeScoreEdit(); return; }
     const d = derive(game);
     if (value !== d.totals[d.batting]) {
         const v = setTotal(game, value);
@@ -286,7 +318,6 @@ function resetNewGameForm() {
     $('team2Select').disabled = true;
     $('startGameButton').disabled = true;
     $('errorMessage').hidden = true;
-    newGameField = state.prefs.field;
 }
 
 function validateNewGame() {
@@ -299,14 +330,8 @@ function validateNewGame() {
 $('newGameButton').addEventListener('click', () => { resetNewGameForm(); show('new'); });
 $('team1Select').addEventListener('change', () => { $('team2Select').disabled = false; validateNewGame(); });
 $('team2Select').addEventListener('change', validateNewGame);
-for (const b of document.querySelectorAll('.field-opt')) {
-    b.addEventListener('click', () => {
-        newGameField = newGameField === b.dataset.field ? null : b.dataset.field;
-        renderNewGame(currentGame(state));
-    });
-}
 $('startGameButton').addEventListener('click', () => {
-    createGame(state, [$('team1Select').value, $('team2Select').value], newGameField);
+    createGame(fresh(), [$('team1Select').value, $('team2Select').value], null);
     persist();
     closeScoreEdit();
     show('scoring');
@@ -321,6 +346,8 @@ $('gamesButton').addEventListener('click', () => {
 });
 $('backToGames').addEventListener('click', () => show('games'));
 $('resumeGameButton').addEventListener('click', () => {
+    fresh();
+    if (!state.games[detailGameId]) { show('games'); return; }
     state.currentGameId = detailGameId;
     persist();
     closeScoreEdit();
@@ -332,7 +359,7 @@ $('deleteGameButton').addEventListener('click', async () => {
     const d = derive(g);
     const ok = await askConfirm(`Delete ${g.teams[0]} ${d.totals[g.teams[0]]} – ${d.totals[g.teams[1]]} ${g.teams[1]}? This can't be undone.`, 'Delete');
     if (!ok) return;
-    deleteGame(state, g.id);
+    deleteGame(fresh(), g.id);
     persist();
     toast('Game deleted');
     show('games');

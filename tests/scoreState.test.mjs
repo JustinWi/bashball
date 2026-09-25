@@ -172,3 +172,54 @@ test('store: works when storage throws, and reports it', () => {
     assert.ok(mem.getItem(STORAGE_KEY));
     assert.deepEqual(store.load(), s);
 });
+
+test('the same two teams on different days are separate games that never mix', () => {
+    const s = emptyState();
+    const day1 = createGame(s, ['Mambas', 'Snappers'], null, Date.parse('2026-09-19T10:00:00'));
+    addScore(day1, 4); switchHalf(day1); addScore(day1, 2);
+    const day2 = createGame(s, ['Mambas', 'Snappers'], null, Date.parse('2026-09-26T10:00:00'));
+    addScore(day2, 1);
+    const rematch = createGame(s, ['Snappers', 'Mambas'], null, Date.parse('2026-09-26T13:00:00'));
+    addScore(rematch, 3);
+    assert.equal(new Set([day1.id, day2.id, rematch.id]).size, 3);
+    const back = parseState(JSON.stringify(s));
+    assert.equal(Object.keys(back.games).length, 3);
+    assert.deepEqual(derive(back.games[day1.id]).totals, { Mambas: 4, Snappers: 2 });
+    assert.deepEqual(derive(back.games[day2.id]).totals, { Mambas: 1, Snappers: 0 });
+    assert.deepEqual(derive(back.games[rematch.id]).totals, { Snappers: 3, Mambas: 0 });
+    // resuming the old game and scoring leaves the others alone
+    back.currentGameId = day1.id;
+    addScore(currentGame(back), 1);
+    assert.deepEqual(derive(back.games[day2.id]).totals, { Mambas: 1, Snappers: 0 });
+    assert.deepEqual(gamesNewestFirst(back).map(g => g.id), [rematch.id, day2.id, day1.id]);
+});
+
+test('ids stay unique even for games created in the same millisecond', () => {
+    const s = emptyState();
+    const ids = new Set();
+    for (let i = 0; i < 200; i++) { const g = createGame(s, ['Mambas', 'Hyenas'], null, 42); addScore(g, 1); ids.add(g.id); }
+    assert.equal(ids.size, 200);
+    assert.equal(Object.keys(s.games).length, 200);
+});
+
+test('a team name that is not in today\'s list is kept, not dropped', () => {
+    const raw = JSON.stringify({ games: { a: { id: 'a', teams: ['Mambas', 'Lightning'], startedAt: 1, events: [{ type: 'score', team: 'Lightning', points: 2 }] } } });
+    const s = parseState(raw);
+    assert.equal(derive(s.games.a).totals.Lightning, 2);
+});
+
+test('unreadable saved data is backed up before it can be overwritten', () => {
+    const mem = memStorage({ [STORAGE_KEY]: '{"games": {"a": broken' });
+    const store = makeStore(() => mem);
+    const s = store.load();
+    assert.deepEqual(s, emptyState());
+    assert.equal(mem.getItem(STORAGE_KEY + '.unreadable'), '{"games": {"a": broken');
+    store.save(s);
+    assert.equal(mem.getItem(STORAGE_KEY + '.unreadable'), '{"games": {"a": broken', 'backup survives the next save');
+
+    const clean = memStorage();
+    const st = makeStore(() => clean);
+    const { s: s2 } = newGame(); addScore(currentGame(s2), 1);
+    st.save(s2); st.load();
+    assert.equal(clean.getItem(STORAGE_KEY + '.unreadable'), null, 'no backup when everything reads fine');
+});

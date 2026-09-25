@@ -23,6 +23,12 @@ export const TEAM_COLORS = {
 
 export const FIELDS = ['DVC', 'Las Lomas'];
 
+export function teamColor(team) {
+    return TEAM_COLORS[team] || '#FFFFFF';
+}
+
+const isTeamName = t => typeof t === 'string' && t.trim() !== '' && t.length <= 60;
+
 export function emptyState() {
     return { version: 1, currentGameId: null, games: {}, prefs: { field: null, historyVisible: false }, migrated: false };
 }
@@ -157,7 +163,8 @@ export function parseState(raw) {
     state.migrated = !!data.migrated;
     for (const g of Object.values(data.games || {})) {
         if (!g || typeof g.id !== 'string' || !Array.isArray(g.teams) || g.teams.length !== 2 || !Array.isArray(g.events)) continue;
-        if (!TEAM_COLORS[g.teams[0]] || !TEAM_COLORS[g.teams[1]] || g.teams[0] === g.teams[1]) continue;
+        // Any team name is kept (not just today's list), so a renamed or added team never loses games.
+        if (!isTeamName(g.teams[0]) || !isTeamName(g.teams[1]) || g.teams[0] === g.teams[1]) continue;
         const events = g.events.filter(ev => ev && (
             (ev.type === 'score' && g.teams.includes(ev.team) && Number.isFinite(ev.points)) ||
             ev.type === 'switch' ||
@@ -199,6 +206,17 @@ export function migrateLegacy(state, storage, now = Date.now()) {
     return imported;
 }
 
+function readCleanly(raw, state) {
+    try {
+        const data = JSON.parse(raw);
+        const games = Object.values((data && data.games) || {});
+        if (games.length !== Object.keys(state.games).length) return false;
+        return games.every(g => state.games[g.id] && state.games[g.id].events.length === (g.events || []).length);
+    } catch {
+        return false;
+    }
+}
+
 // Storage that never throws. `ok` is false when the browser won't let us save (private mode,
 // blocked site data, quota); the page keeps working in memory and tells the user.
 export function makeStore(getStorage) {
@@ -216,7 +234,18 @@ export function makeStore(getStorage) {
         storage,
         load() {
             if (!storage) return emptyState();
-            try { return parseState(storage.getItem(STORAGE_KEY)); } catch { return emptyState(); }
+            let raw = null;
+            try { raw = storage.getItem(STORAGE_KEY); } catch { return emptyState(); }
+            const state = parseState(raw);
+            // If some of what's saved couldn't be read, keep a copy of the original before the
+            // next save overwrites it, so nothing is lost for good.
+            if (raw && !readCleanly(raw, state)) {
+                try {
+                    const backupKey = `${STORAGE_KEY}.unreadable`;
+                    if (storage.getItem(backupKey) !== raw) storage.setItem(backupKey, raw);
+                } catch { /* best effort */ }
+            }
+            return state;
         },
         save(state) {
             if (!storage) return false;

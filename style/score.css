@@ -1,6 +1,7 @@
 /* General Settings */
 :root {
     --footer-height: 70px; /* Base footer height */
+    --header-height: 70px;
     --safe-area-bottom: env(safe-area-inset-bottom, 0px);
     --total-footer-height: calc(var(--footer-height) + var(--safe-area-bottom));
 }
@@ -27,7 +28,7 @@ body {
     top: 0;
     left: 0;
     width: 100%;
-    height: 70px; /* Fixed header height */
+    height: var(--header-height); /* Fixed header height */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -40,7 +41,7 @@ body {
 
 /* Main Content Areas */
 .scoring-screen, .new-game-screen {
-    margin-top: 70px; /* Space for fixed header */
+    margin-top: var(--header-height); /* Space for fixed header */
     margin-bottom: var(--total-footer-height); /* Space for fixed footer */
     padding: 20px;
     flex: 1; /* Take up remaining space */
@@ -94,7 +95,7 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    margin-top: 100px; /* Prevent header from overlapping */
+    margin-top: calc(var(--header-height) + 30px); /* Prevent header from overlapping */
 }
 
 .team-name {
@@ -310,7 +311,7 @@ body.storage-warn {
 
 .storage-warning {
     position: fixed;
-    top: 70px;
+    top: var(--header-height);
     left: 0;
     right: 0;
     z-index: 999;
@@ -380,6 +381,36 @@ body.storage-warn {
     cursor: pointer;
 }
 
+/* Score with its edit button beside it; the button sits outside the centred number */
+.score-row {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.edit-score-btn {
+    position: absolute;
+    left: 100%;
+    margin-left: 12px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 2px solid var(--team-color, #fff);
+    background: transparent;
+    color: var(--team-color, #fff);
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* No double-tap zoom or long-press text selection on any control */
+button, select, .score {
+    touch-action: manipulation;
+}
+
 .score-edit button {
     font-family: 'League Gothic', sans-serif;
     font-size: 2em;
@@ -396,7 +427,7 @@ body.storage-warn {
     position: fixed;
     left: 16px;
     right: 16px;
-    top: 86px;
+    top: calc(var(--header-height) + 8px);
     z-index: 3000;
     margin: 0 auto;
     max-width: 480px;
@@ -408,6 +439,7 @@ body.storage-warn {
     padding: 12px 16px;
     border-radius: 10px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+    pointer-events: none; /* taps go through to the buttons underneath */
 }
 
 .toast.warn {
@@ -442,38 +474,11 @@ body.storage-warn {
     margin-top: 6px;
 }
 
-.field-choice {
-    display: flex;
-    gap: 10px;
-    width: 90%;
-    margin: 0 auto 10px;
-}
-
-#newGameScreen .field-opt {
-    flex: 1;
-    margin: 0;
-    width: auto;
-    background: #222;
-    color: #fff;
-    border: 2px solid #555;
-    border-radius: 25px;
-}
-
-#newGameScreen .field-opt.selected[data-field="DVC"] {
-    background: #ff008c;
-    border-color: #ff008c;
-}
-
-#newGameScreen .field-opt.selected[data-field="Las Lomas"] {
-    background: #008cff;
-    border-color: #008cff;
-}
-
 /* Previous games */
 .games-screen {
     box-sizing: border-box;
     width: 100%;
-    margin-top: 70px;
+    margin-top: var(--header-height);
     margin-bottom: var(--total-footer-height);
     padding: 20px 16px;
     flex: 1;
@@ -562,9 +567,8 @@ body.storage-warn {
 }
 
 .gl-badge {
-    position: absolute;
-    top: 6px;
-    right: 8px;
+    display: inline-block;
+    margin-right: 6px;
     font-family: 'Roboto', sans-serif;
     font-size: 11px;
     background: #4CAF50;
@@ -649,7 +653,12 @@ body.storage-warn {
 
 /* Modal */
 .modal {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow-y: auto;
+    padding: 16px;
+    box-sizing: border-box;
     position: fixed;
     z-index: 2000;
     left: 0;
@@ -660,8 +669,9 @@ body.storage-warn {
 }
 
 .modal-content {
+    box-sizing: border-box;
     background-color: #302f2f;
-    margin: 30% auto 0;
+    margin: auto;
     padding: 24px;
     border-radius: 15px;
     width: 85%;
@@ -683,7 +693,8 @@ body.storage-warn {
 @media screen and (max-width: 768px) {
     /* Update footer height for mobile */
     :root {
-        --footer-height: 90px; /* Larger footer on mobile */
+        --footer-height: 72px; /* Footer on mobile */
+        --header-height: 64px;
     }
     
     /* Use large viewport height to account for mobile browser UI */
@@ -693,7 +704,7 @@ body.storage-warn {
     }
     
     .app-header {
-        height: 80px; /* Larger header on mobile */
+        height: var(--header-height);
         padding: 12px;
     }
     
@@ -702,17 +713,15 @@ body.storage-warn {
         padding-top: 16px;
     }
 
-    .storage-warning {
-        top: 80px;
-    }
-
     .scoring-screen, .new-game-screen, .games-screen {
-        margin-top: 80px; /* Space for larger mobile header */
+        margin-top: var(--header-height);
         margin-bottom: var(--total-footer-height);
     }
     
     body {
-        height: 100%;
+        /* min-height, not height: a fixed height let tall screens spill past the body, so the
+           padding below never reached the content and the last buttons stayed under the footer */
+        min-height: 100%;
         /* Use the calculated total footer height instead of hard-coded value */
         padding-bottom: var(--total-footer-height);
     }
@@ -771,17 +780,17 @@ body.storage-warn {
     
     /* Mobile footer fixes */
     :root {
-        --footer-height: 90px; /* Larger footer on mobile */
+        --footer-height: 72px; /* Footer on mobile */
     }
     
     .app-footer {
-        padding: 15px 10px;
+        padding: 6px 10px;
         /* Ensure footer is always visible on mobile */
         bottom: 0;
         position: fixed;
         height: var(--footer-height);
         /* Add extra padding for mobile safe areas */
-        padding-bottom: calc(15px + var(--safe-area-bottom));
+        padding-bottom: calc(6px + var(--safe-area-bottom));
         /* Prevent footer from being cut off */
         width: 100%;
         box-sizing: border-box;
@@ -800,4 +809,167 @@ body.storage-warn {
     .footer-btn i {
         font-size: 28px;
     }
+}
+
+/* Short screens (phones held sideways): slimmer header and footer so the buttons get the room */
+@media screen and (max-height: 500px) {
+    :root {
+        --footer-height: 58px;
+        --header-height: 52px;
+    }
+
+    .app-header {
+        padding: 6px;
+    }
+
+    .logo {
+        width: 34px;
+        height: 34px;
+    }
+
+    .app-title {
+        font-size: 24px;
+    }
+
+    .app-footer {
+        height: var(--footer-height);
+        padding: 4px 10px;
+        padding-bottom: calc(4px + var(--safe-area-bottom));
+    }
+
+    .footer-btn, .footer-btn i {
+        font-size: 20px;
+    }
+
+    .footer-btn {
+        min-height: 44px;
+    }
+}
+
+/* Phones: the scoring screen fills exactly the space between header and footer, and the five
+   score buttons share whatever height is left, so a scorer never has to scroll mid-game. */
+@media screen and (max-width: 768px) {
+    .scoring-screen {
+        box-sizing: border-box;
+        width: 100%;
+        min-height: calc(100vh - var(--header-height) - var(--total-footer-height));
+        min-height: calc(100dvh - var(--header-height) - var(--total-footer-height));
+        margin-bottom: 0;
+        padding: 8px 0 10px;
+    }
+
+    .scoreboard {
+        margin-bottom: 4px;
+    }
+
+    .team-name {
+        font-size: 32px;
+        line-height: 1.1;
+        margin: 0;
+    }
+
+    .score {
+        font-size: 56px;
+        line-height: 1.05;
+    }
+
+    .half-net {
+        margin: 0 0 8px;
+    }
+
+    .score-buttons {
+        flex: 1 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .score-buttons .score-btn {
+        flex: 1 1 0;
+        min-height: 44px;
+        max-height: 84px;
+        margin: 0 !important;
+        padding: 0 !important;
+        line-height: 1;
+        font-size: 2.4em !important;
+    }
+}
+
+/* Short phone screens: tighten the top so the buttons keep a good size */
+@media screen and (max-width: 768px) and (max-height: 620px) {
+    :root { --header-height: 56px; --footer-height: 64px; }
+    .logo { width: 34px; height: 34px; }
+    .app-title { font-size: 24px; }
+    .sb-name { font-size: 16px; }
+    .sb-score { font-size: 22px; }
+    .team-name { font-size: 26px; }
+    .score { font-size: 44px; }
+    .half-net { font-size: 13px; margin-bottom: 6px; }
+    .score-buttons { gap: 6px; }
+    .score-buttons .score-btn { min-height: 40px; font-size: 2em !important; }
+}
+
+/* Very short portrait screens (iPhone SE 1st gen in Safari): the strip at the top already
+   highlights the batting team, so drop the big name to keep all five buttons on screen. */
+@media screen and (max-width: 768px) and (max-height: 480px) and (orientation: portrait) {
+    .team-name { display: none; }
+    .score-buttons { gap: 5px; }
+    .score-buttons .score-btn { min-height: 36px; font-size: 1.8em !important; }
+    .scoring-screen { padding: 2px 0 4px; }
+}
+
+/* Phone held sideways: one row of score buttons under the score, nothing to scroll. */
+@media screen and (max-height: 500px) and (orientation: landscape) {
+    .scoring-screen {
+        box-sizing: border-box;
+        width: 100%;
+        min-height: calc(100vh - var(--header-height) - var(--total-footer-height));
+        min-height: calc(100dvh - var(--header-height) - var(--total-footer-height));
+        margin-top: var(--header-height);
+        margin-bottom: 0;
+        padding: 4px 0 8px;
+        justify-content: flex-start;
+    }
+
+    body {
+        padding-bottom: var(--total-footer-height);
+    }
+
+    .team-name { display: none; }
+    .scoreboard { margin-bottom: 0; }
+    .sb-name { font-size: 16px; }
+    .sb-score { font-size: 22px; }
+    .score { font-size: 40px; line-height: 1.05; }
+    .half-net { font-size: 13px; margin: 0 0 6px; }
+
+    .score-buttons {
+        flex: 1 0 auto;
+        display: flex;
+        flex-direction: row;
+        align-items: stretch;
+        justify-content: center;
+        gap: 8px;
+        width: 96%;
+        max-width: 900px;
+    }
+
+    .score-buttons .score-btn {
+        flex: 1 1 0;
+        width: auto;
+        min-height: 48px;
+        max-height: 110px;
+        margin: 0 !important;
+        padding: 0 !important;
+        font-size: 2.2em !important;
+        line-height: 1;
+    }
+}
+
+/* Short phones: keep the whole new-game form above the footer */
+@media screen and (max-width: 768px) and (max-height: 620px) {
+    .new-game-screen { padding-top: 8px; }
+    .new-game-screen h1 { font-size: 28px; margin: 4px 0; }
+    #newGameScreen select, #newGameScreen button { font-size: 1.3em; margin: 6px; padding: 6px; min-height: 44px; }
+    .vs { font-size: 1.4em; }
 }
