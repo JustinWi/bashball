@@ -6,6 +6,85 @@ import { getDatabase, ref, onValue } from 'https://www.gstatic.com/firebasejs/9.
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
+let currentField = localStorage.getItem('selectedField') || null;
+
+// Check if field selection is needed
+window.addEventListener('load', function() {
+  if (!currentField) {
+    document.getElementById('locationModal').style.display = 'block';
+  } else {
+    updateFieldDisplay(currentField);
+  }
+});
+
+// Field selection function
+window.selectField = function(field) {
+  currentField = field;
+  localStorage.setItem('selectedField', field);
+  
+  // Set expiration for 3 months
+  const expirationDate = new Date();
+  expirationDate.setMonth(expirationDate.getMonth() + 3);
+  localStorage.setItem('fieldSelectionExpires', expirationDate.toISOString());
+  
+  updateFieldDisplay(field);
+  document.getElementById('locationModal').style.display = 'none';
+  
+  // Refresh leaderboard for the selected field
+  listenForGames();
+};
+
+// Function to update field display with appropriate color
+function updateFieldDisplay(field) {
+  const fieldSelector = document.getElementById('fieldSelector');
+  const selectedFieldSpan = document.getElementById('selectedField');
+  
+  selectedFieldSpan.textContent = field;
+  
+  // Update colors based on selected field
+  if (field === 'DVC') {
+    fieldSelector.style.backgroundColor = '#ff008c';
+    fieldSelector.setAttribute('data-field', 'college-park');
+  } else if (field === 'Las Lomas') {
+    fieldSelector.style.backgroundColor = '#008cff';
+    fieldSelector.setAttribute('data-field', 'los-lomas');
+  }
+}
+
+// Add hover functionality for field selector
+document.getElementById('fieldSelector').addEventListener('mouseenter', function() {
+  const field = this.getAttribute('data-field');
+  if (field === 'college-park') {
+    this.style.backgroundColor = '#a04577';
+  } else if (field === 'los-lomas') {
+    this.style.backgroundColor = '#1976D2';
+  }
+});
+
+document.getElementById('fieldSelector').addEventListener('mouseleave', function() {
+  const field = this.getAttribute('data-field');
+  if (field === 'college-park') {
+    this.style.backgroundColor = '#ff008c';
+  } else if (field === 'los-lomas') {
+    this.style.backgroundColor = '#008cff';
+  }
+});
+
+// Field selector click handler
+document.getElementById('fieldSelector').addEventListener('click', function() {
+  document.getElementById('locationModal').style.display = 'block';
+});
+
+// Check if field selection has expired
+function checkFieldSelectionExpiry() {
+  const expiration = localStorage.getItem('fieldSelectionExpires');
+  if (expiration && new Date() > new Date(expiration)) {
+    localStorage.removeItem('selectedField');
+    localStorage.removeItem('fieldSelectionExpires');
+    currentField = null;
+  }
+}
+
 // Function to display the leaderboard
 function updateLeaderboard(snapshot) {
   const leaderboard = document.getElementById('leaderboard');
@@ -13,7 +92,11 @@ function updateLeaderboard(snapshot) {
   const games = [];
 
   snapshot.forEach(childSnapshot => {
-    games.push(childSnapshot.val());
+    const game = childSnapshot.val();
+    // Only show games for the current field
+    if (game.field === currentField) {
+      games.push(game);
+    }
   });
 
   games
@@ -44,9 +127,19 @@ function updateLeaderboard(snapshot) {
       team2Div.classList.add('team');
       
       if (game.score1 > game.score2) {
-        team1Div.style.color = game.team1Color;
+        // team1 is ahead - check if it's Mambas
+        if (game.team1 === 'Mambas') {
+          team1Div.style.color = '#ffffff'; // White for Mambas when ahead
+        } else {
+          team1Div.style.color = game.team1Color;
+        }
       } else if (game.score1 < game.score2) {
-        team1Div.style.color = game.team2Color;
+        // team2 is ahead - check if it's Mambas
+        if (game.team2 === 'Mambas') {
+          team1Div.style.color = '#ffffff'; // White for Mambas when ahead
+        } else {
+          team1Div.style.color = game.team2Color;
+        }
       }
 
       const lastUpdatedDiv = document.createElement('div');
@@ -64,5 +157,13 @@ function updateLeaderboard(snapshot) {
 }
 
 // Listen for real-time updates
-const gamesRef = ref(db, '/games');
-onValue(gamesRef, updateLeaderboard);
+function listenForGames() {
+  const gamesRef = ref(db, '/games');
+  onValue(gamesRef, updateLeaderboard);
+}
+
+// Initialize on load
+checkFieldSelectionExpiry();
+if (currentField) {
+  listenForGames();
+}

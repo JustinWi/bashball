@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Bashball Scorekeeper</title>
   <link rel="stylesheet" href="./style/score.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">  
@@ -13,9 +13,44 @@
 <body>
   <!-- Common Header for all screens -->
   <header class="app-header">
+    <a href="index.html" class="home-link" title="Back to Home">
+      <i class="fas fa-home"></i>
+    </a>
     <img src="img/logo.png" alt="Bashball Logo" class="logo">
-    <h1 class="app-title">Bashscore</h1> 
+    <h1 class="app-title">Bashball Scorekeeper</h1>
+    <div class="field-selector" id="fieldSelector">
+      <span id="selectedField">Select Field</span>
+    </div>
   </header>
+
+  <!-- Password Protection Screen -->
+  <div class="password-screen" id="passwordScreen">
+    <div class="password-content">
+      <h2>Scorekeeper Access</h2>
+      <p>Enter the scorekeeper password:</p>
+      <input type="password" id="passwordInput" placeholder="Password">
+      <div class="password-buttons">
+        <button id="submitPassword">Submit</button>
+        <button id="backToHome" onclick="window.location.href='index.html'">Back to Home</button>
+      </div>
+      <div id="passwordError" style="color: red; display: none; margin-top: 10px;">Incorrect password. Please try again.</div>
+    </div>
+  </div>
+
+  <!-- Location Selection Modal -->
+  <div id="locationModal" class="modal">
+    <div class="modal-content">
+      <h2>Select Your Field</h2>
+      <p>Choose which field you're scoring for:</p>
+      <div class="field-buttons">
+        <button class="field-btn" onclick="selectField('DVC')">DVC</button>
+        <button class="field-btn" onclick="selectField('Las Lomas')">Las Lomas</button>
+      </div>
+      <div class="modal-footer">
+        <button class="logout-btn" onclick="logout()">Logout</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Scoring Screen -->
   <div class="scoring-screen" id="scoringScreen">
@@ -55,6 +90,7 @@
   <!-- New Game Screen -->
   <div class="new-game-screen" id="newGameScreen" style="display:none;">
     <h1>Start New Game</h1>
+    <div class="field-display">Field: <span id="newGameField">-</span></div>
     <select id="team1Select">
       <option value="" disabled selected>Pick a team</option>
       <option value="Mambas">Mambas</option>

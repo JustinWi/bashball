@@ -1,11 +1,24 @@
 /* General Settings */
+:root {
+    --footer-height: 70px; /* Base footer height */
+    --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+    --total-footer-height: calc(var(--footer-height) + var(--safe-area-bottom));
+}
+
 body {
     font-family: 'League Gothic', sans-serif;
     background-color: #000;
     color: #fff;
     text-align: center;
     margin: 0;
-    padding-bottom: 60px; /* Add padding for footer space */
+    padding: 0;
+    -webkit-user-select: none; /* Disable text selection on mobile */
+    user-select: none;
+    -webkit-tap-highlight-color: transparent; /* Remove tap highlights */
+    box-sizing: border-box;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
 /* Fixed Header */
@@ -14,6 +27,7 @@ body {
     top: 0;
     left: 0;
     width: 100%;
+    height: 70px; /* Fixed header height */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -21,6 +35,43 @@ body {
     padding: 10px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
     z-index: 1000;
+    box-sizing: border-box;
+}
+
+/* Main Content Areas */
+.scoring-screen, .new-game-screen {
+    margin-top: 70px; /* Space for fixed header */
+    margin-bottom: var(--total-footer-height); /* Space for fixed footer */
+    padding: 20px;
+    flex: 1; /* Take up remaining space */
+    min-height: calc(100vh - 70px - var(--total-footer-height)); /* Ensure proper height */
+}
+
+.field-selector {
+    position: absolute;
+    right: 25px;
+    background-color: #ff008c; /* Default to DVC color, will be updated by JS */
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-size: 28px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.home-link {
+    position: absolute;
+    left: 15px;
+    color: #fff;
+    font-size: 20px;
+    text-decoration: none;
+    padding: 8px;
+    border-radius: 50%;
+    transition: background-color 0.3s ease;
+}
+
+.home-link:hover {
+    background-color: rgba(255, 255, 255, 0.1);
 }
 
 .logo {
@@ -63,6 +114,7 @@ body {
 .score-edit input {
     font-size: 24px;
     font-family: 'League Gothic', sans-serif;
+    font-weight: normal;
 }
 
 /* Score Buttons */
@@ -78,6 +130,7 @@ body {
 
 .score-buttons .score-btn {
     font-family: 'League Gothic', sans-serif;
+    font-weight: normal;
     font-size: 3em;
     padding: 10px;
     margin: auto;
@@ -85,6 +138,8 @@ body {
     border: none;
     width: 90%; /* Full width for the button */
     cursor: pointer;
+    touch-action: manipulation; /* Optimize for touch */
+    -webkit-tap-highlight-color: transparent;
 }
 
 .vs {
@@ -120,10 +175,16 @@ body {
     bottom: 0;
     left: 0;
     width: 100%;
+    height: var(--footer-height);
     display: flex;
     justify-content: space-around;
+    align-items: center;
     background-color: #333;
     padding: 10px;
+    z-index: 1000;
+    box-sizing: border-box;
+    /* Add safe area support for mobile devices */
+    padding-bottom: calc(10px + var(--safe-area-bottom));
 }
 
 .footer-btn {
@@ -195,10 +256,18 @@ body {
 /* Dropdown for New Game */
 #newGameScreen select, #newGameScreen button {
     font-family: 'League Gothic', sans-serif;
+    font-weight: normal;
     font-size: 2em; 
     padding: 10px;
     margin: 10px;
     width: 90%; /* Make sure dropdowns are full width for easier selection */
+}
+
+.field-display {
+    font-size: 1.5em;
+    margin-bottom: 20px;
+    color: #4CAF50;
+    font-weight: normal;
 }
 
 #errorMessage {
@@ -207,8 +276,324 @@ body {
 
 #saveScoreButton {
     font-family: 'League Gothic', sans-serif;
+    font-weight: normal;
     padding: 10px;
     margin-top: 10px;
     font-size: 2em; /* Updated button text to 3em */
     cursor: pointer;
+}
+
+/* Password Screen */
+.password-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #000;
+    z-index: 9999; /* Higher than all other elements */
+    overflow: hidden; /* Prevent any scrolling */
+}
+
+.password-content {
+    background-color: #302f2f;
+    padding: 40px;
+    border-radius: 15px;
+    text-align: center;
+    border: 2px solid #fff;
+    max-width: 400px;
+    width: 90%;
+}
+
+.password-content h2 {
+    color: #fff;
+    margin-bottom: 20px;
+    font-family: 'League Gothic', sans-serif;
+    font-weight: normal;
+    font-size: 32px;
+}
+
+.password-content p {
+    color: #ccc;
+    margin-bottom: 25px;
+    font-family: 'Roboto', sans-serif;
+}
+
+#passwordInput {
+    width: 100%;
+    padding: 15px;
+    font-size: 18px;
+    border: 2px solid #ccc;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    background-color: #fff;
+    color: #000;
+    box-sizing: border-box;
+}
+
+.password-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.password-buttons button {
+    padding: 15px 20px;
+    font-size: 36px;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    font-family: 'League Gothic', sans-serif;
+    font-weight: normal;
+}
+
+#submitPassword {
+    background-color: #ff0080;
+    color: white;
+}
+
+#submitPassword:hover {
+    background-color: #ff0080;
+}
+
+#backToHome {
+    background-color: #ffffff;
+    color: #000000;
+    border: 2px solid #ddd;
+}
+
+#backToHome:hover {
+    background-color: #f5f5f5;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+.modal-content {
+    background-color: #302f2f;
+    margin: 15% auto;
+    padding: 30px;
+    border-radius: 15px;
+    width: 80%;
+    max-width: 400px;
+    text-align: center;
+    border: 2px solid #fff;
+}
+
+.modal-content h2 {
+    color: #fff;
+    margin-bottom: 20px;
+    font-family: 'League Gothic', sans-serif;
+    font-weight: normal;
+    font-size: 28px;
+}
+
+.modal-content p {
+    color: #ccc;
+    margin-bottom: 25px;
+    font-family: 'Roboto', sans-serif;
+}
+
+.field-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.field-btn {
+    background-color: #ff008c;
+    color: white;
+    border: none;
+    padding: 15px 20px;
+    font-size: 18px;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    font-family: 'League Gothic', sans-serif;
+    font-weight: normal;
+}
+
+.field-btn:hover {
+    background-color: #a04577;
+}
+
+.field-btn:nth-child(2) {
+    background-color: #008cff;
+}
+
+.field-btn:nth-child(2):hover {
+    background-color: #1976D2;
+}
+
+.modal-footer {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #555;
+}
+
+.logout-btn {
+    background-color: #f44336;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 14px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    font-family: 'Roboto', sans-serif;
+}
+
+.logout-btn:hover {
+    background-color: #da190b;
+}
+
+/* Mobile Optimizations */
+@media screen and (max-width: 768px) {
+    /* Update footer height for mobile */
+    :root {
+        --footer-height: 90px; /* Larger footer on mobile */
+    }
+    
+    /* Use large viewport height to account for mobile browser UI */
+    html {
+        height: 100%;
+        height: 100lvh; /* Large viewport height */
+    }
+    
+    .app-header {
+        height: 80px; /* Larger header on mobile */
+        padding: 12px;
+    }
+    
+    .scoring-screen, .new-game-screen {
+        margin-top: 80px; /* Space for larger mobile header */
+        margin-bottom: var(--total-footer-height);
+    }
+    
+    body {
+        height: 100%;
+        /* Use the calculated total footer height instead of hard-coded value */
+        padding-bottom: var(--total-footer-height);
+    }
+    
+    .app-header {
+        padding: 8px;
+    }
+    
+    .app-title {
+        font-size: 28px;
+    }
+    
+    .logo {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .home-link, .field-selector {
+        font-size: 18px;
+        padding: 6px 8px;
+    }
+    
+    .field-selector {
+        font-size: 18px;
+        padding: 6px 10px;
+        right: 20px; /* Slightly less padding on mobile but still away from edge */
+    }
+    
+    .password-content {
+        padding: 25px;
+        width: 95%;
+    }
+    
+    .password-content h2 {
+        font-size: 26px;
+    }
+    
+    .modal-content {
+        width: 90%;
+        padding: 20px;
+    }
+    
+    .field-btn {
+        padding: 12px 15px;
+        font-size: 16px;
+    }
+    
+    .password-buttons button {
+        padding: 12px 15px;
+        font-size: 24px;
+    }
+    
+    #passwordInput {
+        padding: 12px;
+        font-size: 16px;
+    }
+    
+    .team-name {
+        font-size: 36px;
+    }
+    
+    .score {
+        font-size: 60px;
+    }
+    
+    .score-btn {
+        font-size: 2.5em !important;
+        padding: 8px !important;
+        margin-bottom: 8px !important;
+    }
+    
+    .field-display {
+        font-size: 1.2em;
+    }
+    
+    #newGameScreen select, #newGameScreen button {
+        font-size: 1.5em;
+        padding: 8px;
+    }
+    
+    /* Mobile footer fixes */
+    :root {
+        --footer-height: 90px; /* Larger footer on mobile */
+    }
+    
+    .app-footer {
+        padding: 15px 10px;
+        /* Ensure footer is always visible on mobile */
+        bottom: 0;
+        position: fixed;
+        height: var(--footer-height);
+        /* Add extra padding for mobile safe areas */
+        padding-bottom: calc(15px + var(--safe-area-bottom));
+        /* Prevent footer from being cut off */
+        width: 100%;
+        box-sizing: border-box;
+    }
+    
+    .footer-btn {
+        font-size: 28px;
+        padding: 8px;
+        min-height: 44px; /* Ensure touch target is large enough */
+        min-width: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .footer-btn i {
+        font-size: 28px;
+    }
 }

@@ -6,21 +6,174 @@ import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.17.1
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
+// Password and field management
+let currentField = localStorage.getItem('scorekeeperField') || null;
+
+// Obfuscated password check - uses multiple transformations to hide the actual password
+function checkPassword(input) {
+    // Transform input through multiple steps
+    const step1 = input.split('').reverse().join('');
+    const step2 = btoa(step1); // Base64 encode
+    const step3 = step2.split('').map(c => c.charCodeAt(0)).join('');
+    const step4 = parseInt(step3) % 999999;
+    
+    // Expected result for password
+    const expectedResult = 88983; 
+    return step4 === expectedResult;
+}
+
+// Check authentication and field selection on load
+window.addEventListener('load', function() {
+    const isAuthenticated = localStorage.getItem('scorekeeperAuth') === 'true';
+    
+    if (!isAuthenticated) {
+        showPasswordScreen();
+    } else if (!currentField) {
+        showFieldSelectionModal();
+    } else {
+        updateFieldDisplays();
+        initializeScoring();
+    }
+});
+
+function showPasswordScreen() {
+    document.getElementById('passwordScreen').style.display = 'flex';
+    document.getElementById('scoringScreen').style.display = 'none';
+    document.getElementById('newGameScreen').style.display = 'none';
+}
+
+function showFieldSelectionModal() {
+    document.getElementById('locationModal').style.display = 'block';
+}
+
+// Password handling
+document.getElementById('submitPassword').addEventListener('click', function() {
+    const password = document.getElementById('passwordInput').value;
+    
+    if (checkPassword(password)) {
+        localStorage.setItem('scorekeeperAuth', 'true');
+        document.getElementById('passwordError').style.display = 'none'; // Hide error on success
+        document.getElementById('passwordScreen').style.display = 'none';
+        
+        if (!currentField) {
+            showFieldSelectionModal();
+        } else {
+            updateFieldDisplays();
+            initializeScoring();
+        }
+    } else {
+        document.getElementById('passwordError').style.display = 'block';
+        document.getElementById('passwordInput').value = '';
+    }
+});
+
+// Hide error message when user starts typing
+document.getElementById('passwordInput').addEventListener('input', function() {
+    document.getElementById('passwordError').style.display = 'none';
+});
+
+// Enter key support for password
+document.getElementById('passwordInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        document.getElementById('submitPassword').click();
+    }
+});
+
+// Field selection function
+window.selectField = function(field) {
+    currentField = field;
+    localStorage.setItem('scorekeeperField', field);
+    updateFieldDisplays();
+    document.getElementById('locationModal').style.display = 'none';
+    initializeScoring();
+};
+
+// Field selector click handler
+document.getElementById('fieldSelector').addEventListener('click', function() {
+    document.getElementById('locationModal').style.display = 'block';
+});
+
+// Logout function
+window.logout = function() {
+    localStorage.removeItem('scorekeeperAuth');
+    localStorage.removeItem('scorekeeperField');
+    currentField = null;
+    document.getElementById('locationModal').style.display = 'none';
+    showPasswordScreen();
+};
+
+function initializeScoring() {
+    document.getElementById('scoringScreen').style.display = 'block';
+    updateFieldDisplays();
+    loadGameState();
+    
+    // Initialize history button state
+    const historyButton = document.getElementById('historyButton');
+    if (historyVisible) {
+        historyButton.classList.add('active');
+    } else {
+        historyButton.classList.remove('active');
+    }
+}
+
+function updateFieldDisplays() {
+    if (currentField) {
+        const fieldSelector = document.getElementById('fieldSelector');
+        const selectedFieldSpan = document.getElementById('selectedField');
+        
+        selectedFieldSpan.textContent = currentField;
+        
+        // Update colors based on selected field
+        if (currentField === 'DVC') {
+            fieldSelector.style.backgroundColor = '#ff008c';
+            fieldSelector.setAttribute('data-field', 'college-park');
+        } else if (currentField === 'Las Lomas') {
+            fieldSelector.style.backgroundColor = '#008cff';
+            fieldSelector.setAttribute('data-field', 'los-lomas');
+        }
+        
+        const newGameFieldElement = document.getElementById('newGameField');
+        if (newGameFieldElement) {
+            newGameFieldElement.textContent = currentField;
+        }
+    }
+}
+
+// Add hover functionality for field selector
+document.getElementById('fieldSelector').addEventListener('mouseenter', function() {
+    const field = this.getAttribute('data-field');
+    if (field === 'college-park') {
+        this.style.backgroundColor = '#a04577';
+    } else if (field === 'los-lomas') {
+        this.style.backgroundColor = '#1976D2';
+    }
+});
+
+document.getElementById('fieldSelector').addEventListener('mouseleave', function() {
+    const field = this.getAttribute('data-field');
+    if (field === 'college-park') {
+        this.style.backgroundColor = '#ff008c';
+    } else if (field === 'los-lomas') {
+        this.style.backgroundColor = '#008cff';
+    }
+});
+
 function postScoreToFirebase() {
-    const teamsSorted = [currentTeam, otherTeam].sort(); // Sort team names alphabetically to maintain consistency
-    const gameId = `${teamsSorted[0]}-${teamsSorted[1]}`;
+    const teamsSorted = [currentTeam, otherTeam].sort();
+    const gameId = `${teamsSorted[0]}-${teamsSorted[1]}-${currentField.replace(/\s+/g, '')}`;
   
     const gameData = {
       team1: teamsSorted[0],
       team2: teamsSorted[1],
       score1: scores[teamsSorted[0]] || 0,
       score2: scores[teamsSorted[1]] || 0,
+      field: currentField,
       lastUpdated: new Date().toISOString(),
       team1Color: getTeamColor(teamsSorted[0]),
       team2Color: getTeamColor(teamsSorted[1])
     };
     set(ref(db, `/games/${gameId}`), gameData);
-  }
+}
 
 // Modify the `updateScore` function to include the call to Firebase
 function updateScore(points) {
@@ -49,8 +202,8 @@ const teams = {
 
 let currentTeam = "";
 let otherTeam = "";
-let scores = JSON.parse(localStorage.getItem('scores')) || {};
-let historyVisible = true;
+let scores = {};
+let historyVisible = false; // Default to closed
 
 // Function to get the team color
 function getTeamColor(team) {
@@ -79,25 +232,6 @@ function centerButtons() {
     // buttons.style.flexDirection = "column";
     // buttons.style.justifyContent = "center";
     // buttons.style.alignItems = "center";
-}
-
-// Function to load team-specific history
-function loadTeamHistory() {
-    const historyTable = document.getElementById('historyTable');
-    let history = JSON.parse(localStorage.getItem('history')) || [];
-    const teamHistory = history.filter(entry => entry.team === currentTeam); // Filter history by current team
-
-    historyTable.innerHTML = ''; // Clear the table
-    teamHistory.forEach(entry => {
-        const row = `
-            <tr>
-                <td>${entry.points}</td>
-                <td>${entry.score}</td>
-                <td>${entry.time}</td>
-            </tr>`;
-        historyTable.innerHTML += row;
-    });
-    document.querySelector('.history-section h2').style.display = historyVisible ? 'block' : 'none'; // Show or hide history title
 }
 
 // Function to update button colors based on the team's color
@@ -129,20 +263,6 @@ function hexToRgb(hex) {
     return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : null;
 }
 
-// Function to save the score history
-function saveScoreToHistory(points) {
-    const timestamp = new Date();
-    const entry = {
-        team: currentTeam,
-        points: points === 'Manual' ? 'Manual' : points,
-        score: scores[currentTeam],
-        time: formatTimestamp(timestamp)
-    };
-    let history = JSON.parse(localStorage.getItem('history')) || [];
-    history.unshift(entry); // Add entry at the beginning
-    localStorage.setItem('history', JSON.stringify(history));
-}
-
 // Format the timestamp for the history
 function formatTimestamp(timestamp) {
     const now = new Date();
@@ -150,13 +270,6 @@ function formatTimestamp(timestamp) {
     return isToday
         ? timestamp.toLocaleTimeString([], { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true })
         : `${timestamp.toLocaleTimeString([], { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true })} ${timestamp.getMonth() + 1}/${timestamp.getDate()}/${timestamp.getFullYear() % 100}`;
-}
-
-// Save scores to localStorage
-function saveScores() {
-    localStorage.setItem('scores', JSON.stringify(scores));
-
-    postScoreToFirebase();
 }
 
 // Function to switch teams
@@ -171,13 +284,14 @@ function startNewGame() {
     currentTeam = document.getElementById('team1Select').value;
     otherTeam = document.getElementById('team2Select').value;
 
-    // Save teams to local storage
+    // Save teams to local storage with field prefix
     saveTeams();
 
-    // Clear history and scores
-    localStorage.removeItem('history');
+    // Clear history and scores for current field
+    const fieldKey = currentField ? currentField.replace(/\s+/g, '') : '';
+    localStorage.removeItem(`history_${fieldKey}`);
     scores = {};
-    localStorage.removeItem('scores');
+    localStorage.removeItem(`scores_${fieldKey}`);
     updateScoreDisplay();
 
     if (historyVisible) {
@@ -272,33 +386,90 @@ document.getElementById('saveScoreButton').addEventListener('click', saveManualS
 
 // On page load
 window.onload = function () {
-    const history = JSON.parse(localStorage.getItem('history')) || [];
-    loadTeams();
+    // This will be handled by the load event listener above
+};
 
-    if (history.length > 0) {
-        const lastEntry = history[0]; // Get the most recent entry
-        // currentTeam = lastEntry.team; // Set the team that batted last
-        // saveTeams(); // Ensure teams are saved after refresh
+// Load game state for current field
+function loadGameState() {
+    const fieldKey = currentField ? currentField.replace(/\s+/g, '') : '';
+    const fieldScores = JSON.parse(localStorage.getItem(`scores_${fieldKey}`)) || {};
+    const fieldCurrentTeam = localStorage.getItem(`currentTeam_${fieldKey}`) || '';
+    const fieldOtherTeam = localStorage.getItem(`otherTeam_${fieldKey}`) || '';
+    
+    scores = fieldScores;
+    currentTeam = fieldCurrentTeam;
+    otherTeam = fieldOtherTeam;
+    
+    const history = JSON.parse(localStorage.getItem(`history_${fieldKey}`)) || [];
+    
+    if (history.length > 0 && currentTeam && otherTeam) {
         updateScoreDisplay();
+        document.getElementById('scoringScreen').style.display = 'block';
+        document.getElementById('newGameScreen').style.display = 'none';
     } else if (currentTeam && otherTeam) {
-        // If teams are stored but no history, show teams
         updateScoreDisplay();
+        document.getElementById('scoringScreen').style.display = 'block';
+        document.getElementById('newGameScreen').style.display = 'none';
     } else {
-        // No history, show start game screen
         document.getElementById('scoringScreen').style.display = 'none';
         document.getElementById('newGameScreen').style.display = 'block';
     }
-    document.getElementById('historySection').style.display = 'block'; // Show history by default
-};
-
-// Save both team names to localStorage
-function saveTeams() {
-    localStorage.setItem('currentTeam', currentTeam);
-    localStorage.setItem('otherTeam', otherTeam);
+    // Set initial history visibility based on historyVisible variable
+    document.getElementById('historySection').style.display = historyVisible ? 'block' : 'none';
 }
 
-// Load both team names from localStorage
+// Save scores to localStorage with field prefix
+function saveScores() {
+    const fieldKey = currentField ? currentField.replace(/\s+/g, '') : '';
+    localStorage.setItem(`scores_${fieldKey}`, JSON.stringify(scores));
+    postScoreToFirebase();
+}
+
+// Save both team names to localStorage with field prefix
+function saveTeams() {
+    const fieldKey = currentField ? currentField.replace(/\s+/g, '') : '';
+    localStorage.setItem(`currentTeam_${fieldKey}`, currentTeam);
+    localStorage.setItem(`otherTeam_${fieldKey}`, otherTeam);
+}
+
+// Load both team names from localStorage with field prefix
 function loadTeams() {
-    currentTeam = localStorage.getItem('currentTeam') || "";
-    otherTeam = localStorage.getItem('otherTeam') || "";
+    const fieldKey = currentField ? currentField.replace(/\s+/g, '') : '';
+    currentTeam = localStorage.getItem(`currentTeam_${fieldKey}`) || "";
+    otherTeam = localStorage.getItem(`otherTeam_${fieldKey}`) || "";
+}
+
+// Function to save the score history with field prefix
+function saveScoreToHistory(points) {
+    const fieldKey = currentField ? currentField.replace(/\s+/g, '') : '';
+    const timestamp = new Date();
+    const entry = {
+        team: currentTeam,
+        points: points === 'Manual' ? 'Manual' : points,
+        score: scores[currentTeam],
+        time: formatTimestamp(timestamp)
+    };
+    let history = JSON.parse(localStorage.getItem(`history_${fieldKey}`)) || [];
+    history.unshift(entry);
+    localStorage.setItem(`history_${fieldKey}`, JSON.stringify(history));
+}
+
+// Function to load team-specific history with field prefix
+function loadTeamHistory() {
+    const fieldKey = currentField ? currentField.replace(/\s+/g, '') : '';
+    const historyTable = document.getElementById('historyTable');
+    let history = JSON.parse(localStorage.getItem(`history_${fieldKey}`)) || [];
+    const teamHistory = history.filter(entry => entry.team === currentTeam);
+
+    historyTable.innerHTML = '';
+    teamHistory.forEach(entry => {
+        const row = `
+            <tr>
+                <td>${entry.points}</td>
+                <td>${entry.score}</td>
+                <td>${entry.time}</td>
+            </tr>`;
+        historyTable.innerHTML += row;
+    });
+    document.querySelector('.history-section h2').style.display = historyVisible ? 'block' : 'none';
 }

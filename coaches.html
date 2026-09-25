@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bashball Lineup - Coaches</title>
+  <!-- Using a modern, sleek font -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <!-- External stylesheet -->
+  <link rel="stylesheet" href="style/coaches.css" />
+</head>
+<body>
+  <!-- Password Protection Screen -->
+  <div class="password-screen" id="passwordScreen">
+    <div class="password-content">
+      <h2>Coaches Access</h2>
+      <p>Enter the coaches password:</p>
+      <input type="password" id="passwordInput" placeholder="Password">
+      <div class="password-buttons">
+        <button id="submitPassword">Submit</button>
+        <button id="backToHome" onclick="window.location.href='index.html'">Back to Home</button>
+      </div>
+      <div id="passwordError" style="color: red; display: none; margin-top: 10px;">Incorrect password. Please try again.</div>
+    </div>
+  </div>
+
+  <!-- Setup Screen -->
+  <div class="setup-screen" id="setupScreen" style="display: none;">
+    <header>
+      <a href="index.html" class="home-link" title="Back to Home">
+        <i class="fas fa-home"></i>
+      </a>
+      <img src="img/logo.png" alt="Bashball Logo" class="logo">
+      <h1>Bashball Lineup Setup</h1>
+    </header>
+    
+    <div class="container">
+      <div class="setup-form">
+        <h2>Setup Your Team</h2>
+        
+        <div class="input-group">
+          <label for="fieldSelect">Field:</label>
+          <select id="fieldSelect">
+            <option value="" disabled selected>Select Field</option>
+            <option value="DVC">DVC</option>
+            <option value="Las Lomas">Las Lomas</option>
+          </select>
+        </div>
+
+        <div class="input-group">
+          <label for="gradeSelect">Grade:</label>
+          <select id="gradeSelect">
+            <option value="" disabled selected>Select Grade</option>
+            <option value="1st">1st Grade</option>
+            <option value="2nd">2nd Grade</option>
+            <option value="3rd">3rd Grade</option>
+            <option value="4th">4th Grade</option>
+            <option value="5th">5th Grade</option>
+            <option value="6-8th">6th/7th/8th Grade</option>
+          </select>
+        </div>
+
+        <div class="input-group">
+          <label for="teamSelect">Team:</label>
+          <select id="teamSelect">
+            <option value="" disabled selected>Select Team</option>
+            <option value="Mambas">Mambas</option>
+            <option value="Snappers">Snappers</option>
+            <option value="Honey Badgers">Honey Badgers</option>
+            <option value="Hyenas">Hyenas</option>
+            <option value="Scorpions">Scorpions</option>
+            <option value="Hammerheads">Hammerheads</option>
+            <option value="Dartfrogs">Dartfrogs</option>
+            <option value="Crawdads">Crawdads</option>
+          </select>
+        </div>
+
+        <button id="continueButton" disabled>Continue to Lineup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Lineup Screen -->
+  <div class="lineup-screen" id="lineupScreen" style="display: none;">
+    <header>
+      <a href="index.html" class="home-link" title="Back to Home">
+        <i class="fas fa-home"></i>
+      </a>
+      <img src="img/logo.png" alt="Bashball Logo" class="logo">
+      <h1 id="teamHeader">Team Lineup</h1>
+      <button id="settingsButton" class="settings-btn" title="Change Settings">
+        <i class="fas fa-cog"></i>
+      </button>
+    </header>
+    
+    <div class="container">
+      <!-- Control Section -->
+      <div class="controls">
+        <div class="week-control">
+          <label for="weekInput">Week:</label>
+          <input type="number" id="weekInput" min="1" max="20" value="1" />
+          <button id="nextWeekButton">Next Week</button>
+        </div>
+      </div>
+
+      <!-- Player Management -->
+      <div class="player-management">
+        <div class="roster-header" onclick="toggleRoster()">
+          <h3>Roster <i class="fas fa-chevron-down" id="rosterToggle"></i></h3>
+          <div class="roster-controls" onclick="event.stopPropagation()">
+            <i class="fas fa-edit" id="editRosterIcon" onclick="enterEditMode()" title="Edit Roster" style="display: inline;"></i>
+            <i class="fas fa-save" id="saveRosterIcon" onclick="saveRosterChanges()" title="Save Changes" style="display: none;"></i>
+            <i class="fas fa-times" id="cancelRosterIcon" onclick="cancelRosterChanges()" title="Cancel" style="display: none;"></i>
+          </div>
+        </div>
+        <div class="roster-content" id="rosterContent">
+          <h4>Here?</h4>
+          <div class="player-list" id="playerList">
+            <!-- Players will be dynamically added here -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Lineup Table -->
+      <div class="lineup-section">
+        <h3>Lineup/Positions</h3>
+
+        <!-- Table container for horizontal scrolling -->
+        <div class="table-container" id="tableContainer">
+          <table id="lineupTable">
+            <thead>
+              <tr>
+                <th>Player</th>
+                <th>Inning 1</th>
+                <th>Inning 2</th>
+                <th>Inning 3</th>
+                <th>Inning 4</th>
+                <th>Inning 5</th>
+                <th>Inning 6</th>
+              </tr>
+            </thead>
+            <tbody id="lineupBody">
+              <!-- Table rows generated by JavaScript -->
+            </tbody>
+          </table>
+        </div>
+        
+        <!-- Note below the table -->
+        <div class="note">⭐ = Lead Off | Touch player name to make them lead off next inning</div>
+      </div>
+
+      <!-- Scores Section -->
+      <div class="scores-section">
+        <div class="scores-header" onclick="toggleScores()">
+          <h3>Scores <i class="fas fa-chevron-right" id="scoresToggle"></i></h3>
+        </div>
+        <div class="scores-content collapsed" id="scoresContent">
+          <div id="scoresLeaderboard">
+            <!-- Scores will be dynamically loaded here -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <script src="js/coaches.js"></script>
+</body>
+</html>
